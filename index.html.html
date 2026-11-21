@@ -1,0 +1,2728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="dashboard">
+  <meta name="design-style" content="aurora">
+  <title>Terminal de Crise — War Room Cibernética</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+
+      /* Page and surfaces: deep oceanic slate steps (Aurora) */
+      --background: #0c1214;
+      --surface-container-low: #111a1e;
+      --surface-container: #152024;
+      --surface-container-high: #1c2a30;
+
+      /* Text */
+      --on-surface: #edf3f5;
+      --on-surface-variant: #94a8b0;
+
+      /* Borders */
+      --outline: #38515c;
+      --outline-variant: #213138;
+
+      /* Accents */
+      --primary: #63c7d6;
+      --on-primary: #081214;
+      --primary-container: #163840;
+      --on-primary-container: #c7f0f7;
+      --secondary: #5d7882;
+      --tertiary: #87d69b;
+      --error: #f27474;
+      --on-error: #1a0606;
+
+      /* Data series */
+      --data-1: #63c7d6;
+      --data-2: #87d69b;
+      --data-3: #e8b954;
+      --data-4: #f08c70;
+      --data-context: #415861;
+
+      /* Fonts */
+      --font-headline: 'Instrument Sans', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-label: 'Geist Mono', monospace;
+
+      /* Shape */
+      --rounded: 0.5rem;
+      --rounded-lg: 0.75rem;
+      --rounded-full: 9999px;
+
+      /* Style effects */
+      --hairline: 1px solid var(--outline-variant);
+      --hairline-strong: 1px solid var(--outline);
+      --panel-gradient: linear-gradient(180deg, #162226 0%, #111a1e 100%);
+      --panel-gradient-active: linear-gradient(180deg, #1a2c32 0%, #131e22 100%);
+      --heading-tracking: -0.025em;
+      --label-tracking: 0.06em;
+      --sage-tint: color-mix(in srgb, var(--tertiary) 13%, transparent);
+      --sage-border: color-mix(in srgb, var(--tertiary) 38%, transparent);
+      --cyan-tint: color-mix(in srgb, var(--primary) 13%, transparent);
+      --cyan-border: color-mix(in srgb, var(--primary) 38%, transparent);
+      --error-tint: color-mix(in srgb, var(--error) 14%, transparent);
+      --error-border: color-mix(in srgb, var(--error) 42%, transparent);
+      --amber-tint: color-mix(in srgb, var(--data-3) 14%, transparent);
+      --amber-border: color-mix(in srgb, var(--data-3) 40%, transparent);
+
+      /* Shared semantic & focus tokens */
+      --positive: #87d69b;
+      --warning: #e8b954;
+      --focus: #63c7d6;
+
+      /* Dashboard / Tool type scale */
+      --display-size: clamp(1.65rem, 1.35rem + 1vw, 2.15rem);
+      --headline-size: clamp(1.1875rem, 1.05rem + 0.45vw, 1.4rem);
+      --subhead-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.12vw, 0.98rem);
+      --label-size: 0.75rem;
+
+      /* Spacing scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+      --space-3xl: 6rem;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    /* Base reset */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    header { position: static !important; }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .page-grid {
+      display: grid;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 1360px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .page-grid * { min-width: 0; }
+
+    /* Compact iframe mode */
+    body.is-compact .page-grid {
+      padding: var(--space-md);
+      gap: var(--space-md);
+    }
+    body.is-compact .panel {
+      padding: var(--space-md);
+    }
+
+    /* Header & Command Strip */
+    .command-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: var(--space-lg);
+      align-items: end;
+      border-bottom: var(--hairline);
+      padding-bottom: var(--space-lg);
+    }
+    .title {
+      font-family: var(--font-headline);
+      font-size: var(--display-size);
+      font-weight: 600;
+      letter-spacing: var(--heading-tracking);
+      line-height: 1.1;
+      margin: 0 0 var(--space-xs) 0;
+      color: var(--on-surface);
+    }
+    .subtitle {
+      margin: 0;
+      color: var(--on-surface-variant);
+      max-width: 65ch;
+      font-size: var(--body-size);
+    }
+
+    .clock-console {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+    .clock-readout {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .data-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      margin: 0;
+    }
+    .clock-value {
+      font-family: var(--font-label);
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--primary);
+      line-height: 1.1;
+    }
+    .clock-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      border: var(--hairline-strong);
+      background: var(--surface-container);
+      color: var(--on-surface);
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out),
+                  border-color var(--dur-micro) var(--ease-out),
+                  transform var(--dur-micro) var(--ease-out);
+    }
+    .btn:hover:not(:disabled) {
+      background: var(--surface-container-high);
+      border-color: var(--primary);
+    }
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+    .btn:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--on-primary-container);
+      border-color: var(--on-primary-container);
+    }
+    .btn-sage {
+      background: var(--sage-tint);
+      color: var(--tertiary);
+      border-color: var(--sage-border);
+    }
+    .btn-sage:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--tertiary) 22%, transparent);
+      border-color: var(--tertiary);
+    }
+    .btn-danger {
+      background: var(--error-tint);
+      color: var(--error);
+      border-color: var(--error-border);
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--error) 24%, transparent);
+      border-color: var(--error);
+    }
+    .btn-compact {
+      min-height: 36px;
+      padding: var(--space-xs) var(--space-sm);
+      font-size: 0.8125rem;
+    }
+    .btn-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Mesa selector strip */
+    .mesa-bar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    .mesa-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+      min-height: 64px;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded-lg);
+      border: var(--hairline);
+      background: var(--panel-gradient);
+      color: var(--on-surface);
+      text-align: left;
+      cursor: pointer;
+      transition: background-color var(--dur-short) var(--ease-out),
+                  border-color var(--dur-short) var(--ease-out);
+    }
+    .mesa-btn:hover {
+      background: var(--surface-container-high);
+      border-color: var(--outline);
+    }
+    .mesa-btn.is-active {
+      background: var(--panel-gradient-active);
+      border-color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--cyan-border);
+    }
+    .mesa-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: var(--space-xs);
+    }
+    .mesa-code {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: var(--label-tracking);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .mesa-risk-pill {
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      padding: 1px var(--space-xs);
+      border-radius: var(--rounded);
+      border: var(--hairline);
+      color: var(--on-surface-variant);
+      font-variant-numeric: tabular-nums;
+    }
+    .mesa-risk-pill.is-high {
+      color: var(--error);
+      background: var(--error-tint);
+      border-color: var(--error-border);
+    }
+    .mesa-risk-pill.is-med {
+      color: var(--data-3);
+      background: var(--amber-tint);
+      border-color: var(--amber-border);
+    }
+    .mesa-risk-pill.is-low {
+      color: var(--tertiary);
+      background: var(--sage-tint);
+      border-color: var(--sage-border);
+    }
+    .mesa-name {
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--on-surface);
+    }
+    .mesa-sector {
+      font-size: 0.78rem;
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+
+    /* Scenario context & Phase strip */
+    .context-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      background: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md) var(--space-lg);
+    }
+    .context-copy {
+      flex: 1 1 380px;
+    }
+    .context-title {
+      font-family: var(--font-headline);
+      font-size: var(--subhead-size);
+      font-weight: 600;
+      margin: 0 0 var(--space-xs) 0;
+      color: var(--on-surface);
+    }
+    .context-desc {
+      margin: 0;
+      color: var(--on-surface-variant);
+      font-size: 0.9rem;
+      max-width: 75ch;
+    }
+    .phase-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .segmented {
+      display: inline-flex;
+      flex-wrap: wrap;
+      background: var(--background);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: 2px;
+      gap: 2px;
+    }
+    .seg-btn {
+      min-height: 36px;
+      padding: var(--space-xs) var(--space-sm);
+      border: none;
+      border-radius: calc(var(--rounded) - 2px);
+      background: transparent;
+      color: var(--on-surface-variant);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out),
+                  color var(--dur-micro) var(--ease-out);
+    }
+    .seg-btn:hover {
+      color: var(--on-surface);
+    }
+    .seg-btn.is-active {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+    .panel {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+    }
+    .kpi-tile {
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .metric-value {
+      font-family: var(--font-headline);
+      font-size: 1.75rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: var(--heading-tracking);
+      line-height: 1.1;
+      color: var(--on-surface);
+    }
+    .metric-delta {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+    }
+    .metric-delta.is-positive { color: var(--tertiary); }
+    .metric-delta.is-warning { color: var(--data-3); }
+    .metric-delta.is-danger { color: var(--error); }
+
+    /* Main Asymmetric Operational Workspace */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .stack-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+      border-bottom: var(--hairline);
+      padding-bottom: var(--space-md);
+    }
+    .panel-heading {
+      font-family: var(--font-headline);
+      font-size: var(--headline-size);
+      font-weight: 600;
+      letter-spacing: var(--heading-tracking);
+      line-height: 1.2;
+      margin: var(--space-xs) 0 0 0;
+      color: var(--on-surface);
+    }
+    .panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* Recessed well */
+    .well {
+      background: var(--background);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+    }
+
+    /* Injections Panel */
+    .injection-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--background);
+      border: var(--hairline);
+      border-radius: var(--rounded-full);
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+    }
+    .injection-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width var(--dur-short) var(--ease-out);
+    }
+    .injection-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .injection-card {
+      background: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: var(--space-md);
+      align-items: start;
+      transition: border-color var(--dur-short) var(--ease-out),
+                  background-color var(--dur-short) var(--ease-out);
+    }
+    .injection-card.is-fired {
+      border-color: var(--amber-border);
+      background: color-mix(in srgb, var(--data-3) 6%, var(--surface-container-low));
+    }
+    .injection-card.is-critical {
+      border-color: var(--error-border);
+      background: color-mix(in srgb, var(--error) 6%, var(--surface-container-low));
+    }
+    .inj-time {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-variant-numeric: tabular-nums;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--rounded);
+      background: var(--background);
+      border: var(--hairline);
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+    }
+    .injection-card.is-fired .inj-time {
+      color: var(--data-3);
+      border-color: var(--amber-border);
+    }
+    .injection-card.is-critical .inj-time {
+      color: var(--error);
+      border-color: var(--error-border);
+    }
+    .inj-title {
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.98rem;
+      margin: 0 0 var(--space-xs) 0;
+      color: var(--on-surface);
+    }
+    .inj-body {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--on-surface-variant);
+    }
+    .inj-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      margin-top: var(--space-xs);
+    }
+
+    /* Status chips */
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      border-radius: var(--rounded);
+      padding: 2px var(--space-sm);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      border: var(--hairline);
+      background: var(--background);
+      color: var(--on-surface-variant);
+    }
+    .status-chip.is-fact {
+      background: var(--sage-tint);
+      color: var(--tertiary);
+      border-color: var(--sage-border);
+    }
+    .status-chip.is-fake {
+      background: var(--error-tint);
+      color: var(--error);
+      border-color: var(--error-border);
+    }
+    .status-chip.is-pending {
+      background: var(--amber-tint);
+      color: var(--data-3);
+      border-color: var(--amber-border);
+    }
+    .status-chip.is-cyan {
+      background: var(--cyan-tint);
+      color: var(--primary);
+      border-color: var(--cyan-border);
+    }
+
+    /* Intelligence Triage (Fatos Verdes vs Fakes Vermelhos) */
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .intel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
+      gap: var(--space-md);
+    }
+    .intel-card {
+      background: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-md);
+      border-left-width: 4px;
+      transition: background-color var(--dur-short) var(--ease-out),
+                  border-color var(--dur-short) var(--ease-out);
+    }
+    .intel-card.state-fact {
+      border-color: var(--sage-border);
+      border-left-color: var(--tertiary);
+      background: color-mix(in srgb, var(--tertiary) 7%, var(--surface-container-low));
+    }
+    .intel-card.state-fake {
+      border-color: var(--error-border);
+      border-left-color: var(--error);
+      background: color-mix(in srgb, var(--error) 8%, var(--surface-container-low));
+    }
+    .intel-card.state-pending {
+      border-color: var(--amber-border);
+      border-left-color: var(--data-3);
+      background: color-mix(in srgb, var(--data-3) 6%, var(--surface-container-low));
+    }
+    .intel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+    .intel-claim {
+      margin: var(--space-xs) 0;
+      font-size: 0.93rem;
+      color: var(--on-surface);
+      font-weight: 500;
+    }
+    .intel-evidence {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--on-surface-variant);
+    }
+    .intel-toggle-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-xs);
+      padding-top: var(--space-sm);
+      border-top: var(--hairline);
+    }
+    .tri-btn {
+      min-height: 36px;
+      padding: var(--space-xs) var(--space-xs);
+      border-radius: var(--rounded);
+      border: var(--hairline);
+      background: var(--background);
+      color: var(--on-surface-variant);
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out),
+                  color var(--dur-micro) var(--ease-out),
+                  border-color var(--dur-micro) var(--ease-out);
+    }
+    .tri-btn:hover { color: var(--on-surface); border-color: var(--outline); }
+    .tri-btn.is-fact {
+      background: var(--sage-tint);
+      color: var(--tertiary);
+      border-color: var(--tertiary);
+      font-weight: 600;
+    }
+    .tri-btn.is-fake {
+      background: var(--error-tint);
+      color: var(--error);
+      border-color: var(--error);
+      font-weight: 600;
+    }
+    .tri-btn.is-pending {
+      background: var(--amber-tint);
+      color: var(--data-3);
+      border-color: var(--data-3);
+      font-weight: 600;
+    }
+
+    /* Forms & Inputs (always-visible labels above inputs) */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-md);
+      align-items: end;
+    }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .form-field.is-full {
+      grid-column: 1 / -1;
+    }
+    .field-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+    .input-ctrl, .select-ctrl, .textarea-ctrl {
+      width: 100%;
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      border: var(--hairline-strong);
+      background: var(--background);
+      color: var(--on-surface);
+      transition: border-color var(--dur-micro) var(--ease-out);
+    }
+    .select-ctrl {
+      padding-right: var(--space-xl);
+    }
+    .textarea-ctrl {
+      min-height: 76px;
+      resize: vertical;
+    }
+    .input-ctrl:focus, .select-ctrl:focus, .textarea-ctrl:focus {
+      border-color: var(--primary);
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    /* Transparency vs Concealment Posture Selector */
+    .posture-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    .posture-card {
+      min-height: 68px;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      border: var(--hairline-strong);
+      background: var(--background);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      transition: border-color var(--dur-micro) var(--ease-out),
+                  background-color var(--dur-micro) var(--ease-out);
+    }
+    .posture-card.is-transparency.is-selected {
+      background: var(--sage-tint);
+      border-color: var(--tertiary);
+    }
+    .posture-card.is-concealment.is-selected {
+      background: var(--error-tint);
+      border-color: var(--error);
+    }
+    .posture-title {
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.94rem;
+      color: var(--on-surface);
+    }
+    .posture-card.is-transparency.is-selected .posture-title { color: var(--tertiary); }
+    .posture-card.is-concealment.is-selected .posture-title { color: var(--error); }
+    .posture-hint {
+      font-size: 0.78rem;
+      color: var(--on-surface-variant);
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .preset-btn {
+      min-height: 34px;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--rounded);
+      border: var(--hairline);
+      background: var(--surface-container-low);
+      color: var(--on-surface-variant);
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .preset-btn:hover {
+      border-color: var(--primary);
+      color: var(--on-surface);
+    }
+
+    .inline-msg {
+      min-height: 1.25rem;
+      font-size: 0.85rem;
+      color: var(--on-surface-variant);
+      margin-top: var(--space-xs);
+    }
+    .inline-msg.is-error { color: var(--error); }
+    .inline-msg.is-success { color: var(--tertiary); }
+
+    /* Decision Log Table (A2) */
+    .table-wrap {
+      overflow-x: auto;
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      background: var(--background);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    th {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      text-transform: uppercase;
+      letter-spacing: var(--label-tracking);
+      color: var(--on-surface-variant);
+      text-align: left;
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: var(--hairline-strong);
+      background: var(--surface-container-low);
+      white-space: nowrap;
+    }
+    td {
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: var(--hairline);
+      vertical-align: top;
+      color: var(--on-surface);
+    }
+    tr:last-child td { border-bottom: none; }
+    .td-mono {
+      font-family: var(--font-label);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: var(--on-surface-variant);
+    }
+
+    /* Emergency News Feed */
+    .news-feed {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      max-height: 520px;
+      overflow-y: auto;
+      padding-right: var(--space-xs);
+    }
+    .news-item {
+      background: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .news-item.is-breaking {
+      border-color: var(--error-border);
+      background: color-mix(in srgb, var(--error) 7%, var(--surface-container-low));
+    }
+    .news-item.is-official {
+      border-color: var(--sage-border);
+      background: color-mix(in srgb, var(--tertiary) 6%, var(--surface-container-low));
+    }
+    .news-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+    }
+    .news-headline {
+      margin: 0;
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.94rem;
+      color: var(--on-surface);
+    }
+    .news-summary {
+      margin: 0;
+      font-size: 0.84rem;
+      color: var(--on-surface-variant);
+    }
+
+    /* 3x3 Risk Matrix */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: auto repeat(3, minmax(0, 1fr));
+      gap: var(--space-xs);
+      align-items: center;
+    }
+    .matrix-axis-label {
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      text-align: center;
+      padding: var(--space-xs);
+    }
+    .matrix-cell {
+      min-height: 54px;
+      border-radius: var(--rounded);
+      border: var(--hairline);
+      padding: var(--space-xs);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+      text-align: center;
+    }
+    .matrix-cell.zone-low { background: var(--sage-tint); border-color: var(--sage-border); }
+    .matrix-cell.zone-med { background: var(--amber-tint); border-color: var(--amber-border); }
+    .matrix-cell.zone-high { background: var(--error-tint); border-color: var(--error-border); }
+    .matrix-cell.is-current {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+      color: var(--on-surface);
+      font-weight: 600;
+    }
+
+    /* Reference Drawer */
+    .ref-details {
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      background: var(--surface-container-low);
+      padding: var(--space-sm) var(--space-md);
+    }
+    .ref-summary {
+      cursor: pointer;
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: var(--primary);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 36px;
+    }
+    .ref-body {
+      padding-top: var(--space-sm);
+      border-top: var(--hairline);
+      margin-top: var(--space-sm);
+      font-size: 0.85rem;
+      color: var(--on-surface-variant);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .ref-body p { margin: 0; }
+
+    /* Collapsible custom forms */
+    .drawer-box {
+      margin-top: var(--space-md);
+      padding: var(--space-md);
+      background: var(--background);
+      border: var(--hairline-strong);
+      border-radius: var(--rounded);
+    }
+    .is-hidden { display: none !important; }
+
+    /* Container queries for component adaptation */
+    .card-wrapper { container-type: inline-size; }
+    @container (max-width: 520px) {
+      .injection-card {
+        grid-template-columns: 1fr;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .posture-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Responsive breakpoints */
+    @media (max-width: 1024px) {
+      .command-header {
+        grid-template-columns: 1fr;
+      }
+      .mesa-bar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-grid {
+        grid-template-columns: 1fr;
+        padding: var(--space-sm);
+        gap: var(--space-md);
+      }
+      .mesa-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .posture-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-grid">
+    <!-- Top Header & Simulation Timer -->
+    <header class="command-header">
+      <div>
+        <h1 class="title">Terminal de Crise — War Room Cibernética</h1>
+        <p class="subtitle">Painel interativo para coordenação de resposta a incidentes, triagem entre fatos confirmados e boatos, disparo de injeções temporizadas e registro de decisões em sala de guerra (compatível com iFrame no Miro).</p>
+      </div>
+
+      <div class="clock-console" role="region" aria-label="Controle do cronômetro da War Room">
+        <div class="clock-readout">
+          <span class="data-label">Tempo de Crise</span>
+          <span class="clock-value" id="sim-clock">00:00</span>
+        </div>
+        <div class="clock-controls">
+          <button type="button" class="btn btn-primary btn-compact" id="btn-toggle-timer" onclick="toggleTimer()">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            <span id="timer-btn-label">Iniciar</span>
+          </button>
+          <button type="button" class="btn btn-compact" id="btn-speed" onclick="cycleSpeed()" title="Alternar velocidade do simulador">1× Vel</button>
+          <button type="button" class="btn btn-compact" id="btn-compact-mode" onclick="toggleCompactMode()" title="Ajustar densidade para iFrame no Miro">iFrame Compacto</button>
+          <button type="button" class="btn btn-danger btn-compact" id="btn-reset-sim" onclick="resetSimulation(this)">Resetar</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mesa Selector (MC1 - MC5) -->
+    <section aria-label="Seleção da Mesa de Crise">
+      <div class="mesa-bar" id="mesa-bar"></div>
+    </section>
+
+    <!-- Active Scenario Context & Negotiation Phase -->
+    <section class="context-strip" aria-label="Contexto do cenário ativo">
+      <div class="context-copy">
+        <span class="data-label" id="active-mesa-tag">MC1 · Setor Bancário</span>
+        <h2 class="context-title" id="active-scenario-title">Carregando cenário...</h2>
+        <p class="context-desc" id="active-scenario-desc"></p>
+      </div>
+      <div class="phase-group">
+        <span class="data-label">Fase da Negociação Cibernética</span>
+        <div class="segmented" role="group" aria-label="Fase da negociação cibernética">
+          <button type="button" class="seg-btn" id="phase-pre" onclick="setNegotiationPhase('pre')">1. Pré-ataque</button>
+          <button type="button" class="seg-btn is-active" id="phase-during" onclick="setNegotiationPhase('during')">2. Durante o ataque</button>
+          <button type="button" class="seg-btn" id="phase-post" onclick="setNegotiationPhase('post')">3. Pós-ataque</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Hierarchy -->
+    <section class="kpi-grid" aria-label="Indicadores operacionais da mesa">
+      <div class="panel kpi-tile">
+        <span class="data-label">Risco Residual da Operação</span>
+        <span class="metric-value" id="kpi-risk">78%</span>
+        <span class="metric-delta is-danger" id="kpi-risk-label">Crítico · Contenção pendente</span>
+      </div>
+      <div class="panel kpi-tile">
+        <span class="data-label">Confiança Pública &amp; Reputação</span>
+        <span class="metric-value" id="kpi-trust">62%</span>
+        <span class="metric-delta is-warning" id="kpi-trust-label">Pressão externa crescente</span>
+      </div>
+      <div class="panel kpi-tile">
+        <span class="data-label">Triagem de Inteligência</span>
+        <span class="metric-value" id="kpi-intel">2 / 1</span>
+        <span class="metric-delta" id="kpi-intel-label">Fatos verdes vs. Fakes vermelhos</span>
+      </div>
+      <div class="panel kpi-tile">
+        <span class="data-label">Decisões da Mesa (A2)</span>
+        <span class="metric-value" id="kpi-decisions">0</span>
+        <span class="metric-delta" id="kpi-decisions-label">Nenhuma decisão registrada</span>
+      </div>
+    </section>
+
+    <!-- Main Asymmetric Workspace -->
+    <main class="workspace-grid">
+      <!-- Left Primary Column -->
+      <div class="stack-col">
+        <!-- 1. Disparo de Injeções Temporizadas -->
+        <section class="panel card-wrapper" aria-labelledby="heading-injections">
+          <div class="panel-header">
+            <div>
+              <span class="data-label">Motor de Simulação</span>
+              <h2 class="panel-heading" id="heading-injections">Injeções Temporizadas da Crise</h2>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-primary btn-compact" id="btn-fire-next" onclick="fireNextInjection()">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Disparar Próxima</span>
+              </button>
+              <button type="button" class="btn btn-compact" onclick="toggleCustomInjectionForm()">+ Injeção Ao Vivo</button>
+            </div>
+          </div>
+
+          <div class="injection-progress-bar" aria-label="Progresso das injeções temporizadas">
+            <div class="injection-progress-fill" id="inj-progress-fill"></div>
+          </div>
+
+          <div class="drawer-box is-hidden" id="custom-injection-drawer">
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="field-label" for="custom-inj-channel">Canal / Origem</label>
+                <select class="select-ctrl" id="custom-inj-channel">
+                  <option value="SAC / Clientes">SAC / Clientes</option>
+                  <option value="Imprensa / Mídia">Imprensa / Mídia</option>
+                  <option value="Atacante / Canal Extorsão">Atacante / Canal Extorsão</option>
+                  <option value="Órgão Regulador / PF">Órgão Regulador / PF</option>
+                  <option value="SOC / Time Técnico">SOC / Time Técnico</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="custom-inj-severity">Severidade</label>
+                <select class="select-ctrl" id="custom-inj-severity">
+                  <option value="alta">Alta (Urgência Imediata)</option>
+                  <option value="critica">Crítica (Ruptura / Ultimato)</option>
+                </select>
+              </div>
+              <div class="form-field is-full">
+                <label class="field-label" for="custom-inj-title">Título da Injeção</label>
+                <input type="text" class="input-ctrl" id="custom-inj-title" placeholder="Ex.: Vídeo de cliente viraliza com erro de cobrança">
+              </div>
+              <div class="form-field is-full">
+                <label class="field-label" for="custom-inj-desc">Descrição / Pressão sobre a Mesa</label>
+                <textarea class="textarea-ctrl" id="custom-inj-desc" placeholder="Descreva o evento e a demanda imediata aos representantes..."></textarea>
+              </div>
+              <div class="form-field is-full">
+                <div class="panel-actions">
+                  <button type="button" class="btn btn-primary btn-compact" onclick="submitCustomInjection()">Disparar Injeção Agora</button>
+                  <button type="button" class="btn btn-compact" onclick="toggleCustomInjectionForm()">Cancelar</button>
+                </div>
+                <div class="inline-msg" id="custom-inj-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="injection-list" id="injection-list"></div>
+        </section>
+
+        <!-- 2. Alternância Fatos Confirmados (Verdes) vs Fakes / Boatos (Vermelhos) -->
+        <section class="panel card-wrapper" aria-labelledby="heading-intel">
+          <div class="panel-header">
+            <div>
+              <span class="data-label">Triagem de Evidências (Legenda War Room)</span>
+              <h2 class="panel-heading" id="heading-intel">Fatos Confirmados vs. Fakes / Boatos</h2>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-compact" onclick="toggleAddIntelForm()">+ Novo Relato</button>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <div class="segmented" role="group" aria-label="Filtrar itens de inteligência">
+              <button type="button" class="seg-btn is-active" id="filter-intel-all" onclick="setIntelFilter('all')">Todos</button>
+              <button type="button" class="seg-btn" id="filter-intel-fact" onclick="setIntelFilter('fact')">Fatos (Verde)</button>
+              <button type="button" class="seg-btn" id="filter-intel-fake" onclick="setIntelFilter('fake')">Fakes (Vermelho)</button>
+              <button type="button" class="seg-btn" id="filter-intel-pending" onclick="setIntelFilter('pending')">Em Verificação</button>
+            </div>
+            <span class="data-label" id="intel-counter-summary">Alterne cada cartão conforme evidência</span>
+          </div>
+
+          <div class="drawer-box is-hidden" id="add-intel-drawer">
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="field-label" for="new-intel-type">Classificação Inicial</label>
+                <select class="select-ctrl" id="new-intel-type">
+                  <option value="fact">Fato Confirmado (Verde)</option>
+                  <option value="fake">Fake / Boato (Vermelho)</option>
+                  <option value="pending">Em Verificação (Âmbar)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label class="field-label" for="new-intel-cia">Impacto CIA / Fonte</label>
+                <input type="text" class="input-ctrl" id="new-intel-cia" placeholder="Ex.: Disponibilidade · Log do Gateway">
+              </div>
+              <div class="form-field is-full">
+                <label class="field-label" for="new-intel-claim">Afirmação / Relato Recebido</label>
+                <input type="text" class="input-ctrl" id="new-intel-claim" placeholder="Descreva o fato observado ou boato circulante">
+              </div>
+              <div class="form-field is-full">
+                <label class="field-label" for="new-intel-evidence">Evidência ou Motivo da Classificação</label>
+                <input type="text" class="input-ctrl" id="new-intel-evidence" placeholder="Qual log, teste ou fonte confirma ou refuta?">
+              </div>
+              <div class="form-field is-full">
+                <div class="panel-actions">
+                  <button type="button" class="btn btn-sage btn-compact" onclick="submitNewIntel()">Adicionar ao Quadro</button>
+                  <button type="button" class="btn btn-compact" onclick="toggleAddIntelForm()">Fechar</button>
+                </div>
+                <div class="inline-msg" id="new-intel-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="intel-grid" id="intel-grid"></div>
+        </section>
+
+        <!-- 3. Registro de Decisões da Mesa (Transparência vs Ocultação) -->
+        <section class="panel card-wrapper" aria-labelledby="heading-decisions">
+          <div class="panel-header">
+            <div>
+              <span class="data-label">Registro Único de Decisões (Artefato A2)</span>
+              <h2 class="panel-heading" id="heading-decisions">Decisões da Mesa: Transparência vs. Ocultação</h2>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-compact" onclick="exportDecisionsCsv()">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Exportar CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="well">
+            <div class="form-grid">
+              <div class="form-field is-full">
+                <span class="field-label">Postura Estratégica da Decisão</span>
+                <div class="posture-grid" role="group" aria-label="Postura de transparência versus ocultação">
+                  <button type="button" class="posture-card is-transparency is-selected" id="posture-transparency" onclick="selectPosture('transparencia')">
+                    <span class="posture-title">Transparência &amp; Prestação de Contas</span>
+                    <span class="posture-hint">Comunicação clara com fatos confirmados, cooperação com regulador e gestão de reputação (padrão pós-ataque).</span>
+                  </button>
+                  <button type="button" class="posture-card is-concealment" id="posture-concealment" onclick="selectPosture('ocultacao')">
+                    <span class="posture-title">Ocultação / Negociação Discreta</span>
+                    <span class="posture-hint">Contenção sigilosa sem aviso público ou pagamento discreto (alto risco de vazamento secundário — Caso Uber 2016).</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-field is-full">
+                <span class="field-label">Atalhos de Decisão do Setor</span>
+                <div class="preset-row" id="decision-presets"></div>
+              </div>
+
+              <div class="form-field is-full">
+                <label class="field-label" for="dec-action">Decisão / Ação Deliberada pela Mesa</label>
+                <input type="text" class="input-ctrl" id="dec-action" placeholder="Ex.: Isolar módulo de pagamento, preservar logs e publicar nota técnica">
+              </div>
+
+              <div class="form-field">
+                <label class="field-label" for="dec-owner">Responsável Único (Papel)</label>
+                <select class="select-ctrl" id="dec-owner">
+                  <option value="Coordenador War Room">Coordenador War Room</option>
+                  <option value="Líder Técnico / SOC">Líder Técnico / SOC</option>
+                  <option value="Jurídico &amp; Compliance">Jurídico &amp; Compliance</option>
+                  <option value="Comunicação &amp; SAC">Comunicação &amp; SAC</option>
+                  <option value="Diretoria Executiva">Diretoria Executiva</option>
+                  <option value="Consultoria / Auditor">Consultoria / Auditor</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label class="field-label" for="dec-evidence">Evidência / Base Factual (Log ou Fato)</label>
+                <input type="text" class="input-ctrl" id="dec-evidence" placeholder="Ex.: F-101 · Log do gateway + backup íntegro">
+              </div>
+
+              <div class="form-field is-full">
+                <div class="panel-actions">
+                  <button type="button" class="btn btn-primary" onclick="submitDecision()">Registrar Decisão no Painel A2</button>
+                </div>
+                <div class="inline-msg" id="decision-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-md);">
+            <div class="filter-row">
+              <span class="data-label" id="log-table-caption">Histórico da Mesa Ativa</span>
+              <div class="segmented" role="group" aria-label="Escopo da tabela de decisões">
+                <button type="button" class="seg-btn is-active" id="log-scope-mesa" onclick="setLogScope('mesa')">Somente Mesa Atual</button>
+                <button type="button" class="seg-btn" id="log-scope-all" onclick="setLogScope('all')">Todas as Mesas</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th>Mesa</th>
+                    <th>Postura</th>
+                    <th>Decisão &amp; Evidência</th>
+                    <th>Responsável</th>
+                  </tr>
+                </thead>
+                <tbody id="decision-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Telemetry & Emergency News Column -->
+      <aside class="stack-col">
+        <!-- 4. Feed de Notícias de Emergência -->
+        <section class="panel" aria-labelledby="heading-news">
+          <div class="panel-header">
+            <div>
+              <span class="data-label">Monitoramento Externo &amp; Interno</span>
+              <h2 class="panel-heading" id="heading-news">Feed de Notícias de Emergência</h2>
+            </div>
+            <span class="status-chip is-cyan" id="news-count-badge">0 alertas</span>
+          </div>
+
+          <div class="filter-row">
+            <div class="segmented" role="group" aria-label="Filtrar feed de notícias">
+              <button type="button" class="seg-btn is-active" id="news-filter-all" onclick="setNewsFilter('all')">Tudo</button>
+              <button type="button" class="seg-btn" id="news-filter-press" onclick="setNewsFilter('Imprensa')">Imprensa</button>
+              <button type="button" class="seg-btn" id="news-filter-social" onclick="setNewsFilter('Redes')">Redes</button>
+              <button type="button" class="seg-btn" id="news-filter-reg" onclick="setNewsFilter('Regulador')">Regulador</button>
+            </div>
+          </div>
+
+          <div class="news-feed" id="news-feed" aria-live="polite"></div>
+        </section>
+
+        <!-- 5. Matriz de Risco 3x3 & Referencial War Room -->
+        <section class="panel" aria-labelledby="heading-matrix">
+          <div class="panel-header">
+            <div>
+              <span class="data-label">Avaliação Dinâmica</span>
+              <h2 class="panel-heading" id="heading-matrix">Matriz de Risco Residual (3×3)</h2>
+            </div>
+            <span class="status-chip" id="matrix-position-chip">Impacto Alto × Prob. Alta</span>
+          </div>
+
+          <div class="matrix-grid" id="risk-matrix" aria-label="Matriz de impacto por probabilidade"></div>
+
+          <div style="margin-top: var(--space-md); display: flex; flex-direction: column; gap: var(--space-sm);">
+            <details class="ref-details" open>
+              <summary class="ref-summary">
+                <span>Guia Rápido: Negociação Cibernética &amp; Casos</span>
+                <span class="data-label">Referencial</span>
+              </summary>
+              <div class="ref-body">
+                <p><strong>As 3 fases (Falco, Noriega &amp; Susskind):</strong> Pré-ataque (plano, treinamento, parcerias com PF/especialistas); Durante o ataque (ativar War Room, conter ameaça, consulta jurídica e negociação para ganhar tempo ou inteligência); Pós-ataque (forense, recuperação, transparência e lições aprendidas).</p>
+                <p><strong>Transparência vs. Ocultação (Caso Uber 2016 vs. NHS WannaCry 2017):</strong> O pagamento discreto de US$ 100 mil pela Uber para ocultar a violação de 57 milhões de usuários gerou grave dano reputacional e sanções. No ataque WannaCry ao NHS, recusar o resgate reforçou a importância de backups, atualizações e um SOC estruturado.</p>
+                <p><strong>Comunicação no War Room (Tajra; Udasi; Marker):</strong> Separe fatos verificados (verdes) de boatos (vermelhos), use linguagem clara sem jargões, registre um único responsável por decisão e evite prometer o que ainda é hipótese.</p>
+              </div>
+            </details>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <api-shim></api-shim>
+  <script>
+    /* ==========================================================
+       DATA MODEL: 5 MESAS DE CRISE (MC1 - MC5)
+       ========================================================== */
+    const MESAS_CATALOG = {
+      MC1: {
+        id: `MC1`,
+        code: `MC1`,
+        name: `Banking`,
+        sector: `Financeiro & PIX`,
+        title: `Anomalia em Barramento PIX e Ameaça de Vazamento`,
+        description: `Pico noturno no sistema bancário: requisições anômalas de estorno e transferência foram detectadas no gateway enquanto circula nas redes um boato de bloqueio nacional de saques.`,
+        initialRisk: 78,
+        initialTrust: 64,
+        presets: [
+          { label: `Degradar faixa crítica`, posture: `transparencia`, action: `Bloquear transações fora de faixa acima de R$ 50 mil mantendo canais essenciais e publicar nota oficial`, owner: `Coordenador War Room`, evidence: `F-101 · Logs de 1.420 requisições` },
+          { label: `Negociar em sigilo`, posture: `ocultacao`, action: `Abrir canal discreto com extorsionários sem notificar clientes ou Banco Central`, owner: `Diretoria Executiva`, evidence: `F-104 · Demanda em criptoativos` },
+          { label: `Desmentir boato com fatos`, posture: `transparencia`, action: `Emitir comunicado transparente confirmando integridade dos saldos e backups validados`, owner: `Comunicação & SAC`, evidence: `F-102 · Backups imutáveis íntegros` }
+        ],
+        injections: [
+          {
+            id: `mc1-i1`,
+            triggerSec: 45,
+            channel: `Redes Sociais`,
+            severity: `alta`,
+            title: `Vídeo viral mostra tela falsa de saldo zerado`,
+            body: `Postagem com 180 mil visualizações alega que contas correntes foram esvaziadas; clientes correm para agências e sobrecarregam o SAC.`,
+            addsIntel: { id: `F-105`, type: `fake`, cia: `Integridade · Mídia Social`, claim: `Tela viral comprova saldo zerado em massa nas contas correntes.`, evidence: `Montagem reciclada de falha de 2023; livro-razão principal está íntegro (F-102).` },
+            news: { source: `Redes`, severity: `breaking`, headline: `Vídeo sobre suposto sumiço de saldos viraliza e gera filas em agências`, summary: `Desinformação impulsiona corrida ao atendimento enquanto banco avalia extensão técnica.` }
+          },
+          {
+            id: `mc1-i2`,
+            triggerSec: 120,
+            channel: `Atacante / Canal Extorsão`,
+            severity: `critica`,
+            title: `Ultimato de 4 horas com amostra de dados`,
+            body: `Grupo ameaça publicar lote de registros cadastrais caso não haja resposta imediata de negociação.`,
+            addsIntel: { id: `F-106`, type: `pending`, cia: `Confidencialidade · Amostra`, claim: `Amostra recebida contém CPFs e chaves PIX reais de clientes ativos.`, evidence: `Equipe de forense cruzando hashes da amostra com a base de produção.` },
+            news: { source: `Imprensa`, severity: `breaking`, headline: `Coluna de economia apura possível chantagem cibernética contra instituição financeira`, summary: `Jornalistas solicitam posicionamento oficial antes do fechamento da edição.` }
+          },
+          {
+            id: `mc1-i3`,
+            triggerSec: 210,
+            channel: `Órgão Regulador / BACEN`,
+            severity: `alta`,
+            title: `Intimação regulatória para linha do tempo`,
+            body: `Regulador exige confirmação objetiva: quantos clientes afetados, qual contenção foi aplicada e se há notificação prevista pela LGPD.`,
+            addsIntel: null,
+            news: { source: `Regulador`, severity: `alert`, headline: `Banco Central e ANPD solicitam relatório formal de incidente ao comitê de crise`, summary: `Prazo exige separação rigorosa entre fatos confirmados e hipóteses em apuração.` }
+          },
+          {
+            id: `mc1-i4`,
+            triggerSec: 300,
+            channel: `Diretoria Comercial`,
+            severity: `alta`,
+            title: `Pressão para reabrir 100% do app agora`,
+            body: `Área comercial alega perda de receita e pede liberação total após teste rápido em homologação, antes da auditoria de logs.`,
+            addsIntel: null,
+            news: { source: `SOC`, severity: `alert`, headline: `Auditoria alerta: reabertura sem conciliação pode multiplicar estornos indevidos`, summary: `Consultoria lembra que teste unitário positivo não encerra a investigação forense.` }
+          }
+        ],
+        intel: [
+          { id: `F-101`, type: `fact`, cia: `Integridade · Gateway`, claim: `1.420 requisições anômalas de estorno/transferência fora de faixa detectadas nos últimos 18 min.`, evidence: `Correlação confirmada em logs do SIEM e telemetria do barramento.` },
+          { id: `F-102`, type: `fact`, cia: `Disponibilidade · Backup`, claim: `Backups imutáveis das últimas 6 horas validados; livro-razão principal preservado.`, evidence: `Verificação de checksum concluída pelo SOC às 20h15.` },
+          { id: `F-103`, type: `fake`, cia: `Boato Externo · WhatsApp`, claim: `Áudio afirma que o Banco Central decretou bloqueio nacional de saques por 72 horas.`, evidence: `Nenhuma resolução emitida pelo regulador; áudio reutiliza texto de outro país.` },
+          { id: `F-104`, type: `pending`, cia: `Confidencialidade · Em apuração`, claim: `Invasor exige US$ 2,5M alegando exfiltração de 4 milhões de registros cadastrais.`, evidence: `Sem evidência de tráfego de saída compatível com 4M registros até o momento.` }
+        ],
+        news: [
+          { time: `20:05`, source: `SOC`, severity: `alert`, headline: `War Room MC1 ativada após pico de transações anômalas no gateway`, summary: `Equipes de segurança, jurídico e comunicação assumem monitoramento em tempo real.` },
+          { time: `20:12`, source: `Redes`, severity: `breaking`, headline: `Boatos sobre paralisação do PIX circulam em grupos de mensagens`, summary: `Volume de menções cresce 340% em dez minutos.` }
+        ]
+      },
+
+      MC2: {
+        id: `MC2`,
+        code: `MC2`,
+        name: `Saúde`,
+        sector: `Rede Hospitalar Crítica`,
+        title: `Ransomware Paralisa Prontuários em 6 Hospitais (Ref. NHS WannaCry)`,
+        description: `Criptografia bloqueou o Prontuário Eletrônico do Paciente (PEP) e o agendamento cirúrgico em seis unidades. Equipes assistenciais operam em contingência manual.`,
+        initialRisk: 84,
+        initialTrust: 58,
+        presets: [
+          { label: `Não pagar resgate + contingência`, posture: `transparencia`, action: `Recusar pagamento de resgate, ativar protocolo assistencial offline e notificar MP/ANPD e pacientes`, owner: `Coordenador War Room`, evidence: `F-202 · UTIs isoladas + caso NHS` },
+          { label: `Pagar em sigilo para liberar PEP`, posture: `ocultacao`, action: `Autorizar negociação discreta e pagamento sigiloso sem comunicar imprensa ou pacientes`, owner: `Diretoria Executiva`, evidence: `F-204 · Pressão por retorno imediato` },
+          { label: `Comunicar cirurgias com clareza`, posture: `transparencia`, action: `Publicar boletim hospitalar transparente sobre reagendamentos e canais seguros de atendimento`, owner: `Comunicação & SAC`, evidence: `F-201 · Contingência em papel ativa` }
+        ],
+        injections: [
+          {
+            id: `mc2-i1`,
+            triggerSec: 45,
+            channel: `SAC / Pronto-Socorro`,
+            severity: `critica`,
+            title: `340 cirurgias eletivas suspensas geram tumulto`,
+            body: `Familiares cobram respostas nas recepções diante da demora na entrega de exames de imagem e falta de previsão.`,
+            addsIntel: { id: `F-205`, type: `fact`, cia: `Disponibilidade · Assistencial`, claim: `340 procedimentos eletivos adiados e exames laboratoriais entregues apenas em via impressa.`, evidence: `Boletim consolidado pelas diretorias clínicas das 6 unidades.` },
+            news: { source: `Imprensa`, severity: `breaking`, headline: `Hospitais da rede suspendem cirurgias eletivas após pane cibernética`, summary: `Pacientes relatam atendimento manual nos prontos-socorros desde o início da noite.` }
+          },
+          {
+            id: `mc2-i2`,
+            triggerSec: 120,
+            channel: `Atacante / Canal Extorsão`,
+            severity: `critica`,
+            title: `Proposta de "descriptografia expressa" por R$ 4,2M`,
+            body: `Mensagem exige pagamento em 6 horas para entrega de chave e promessa de não vazar laudos oncológicos.`,
+            addsIntel: null,
+            news: { source: `SOC`, severity: `alert`, headline: `Consultoria alerta para a armadilha do resgate: ausência de garantia técnica de recuperação`, summary: `Estudos de gestão de crises apontam incentivo a novos ataques e financiamento criminoso.` }
+          },
+          {
+            id: `mc2-i3`,
+            triggerSec: 210,
+            channel: `Imprensa Investigativa`,
+            severity: `alta`,
+            title: `Repórter apura se houve tentativa de ocultar o ataque`,
+            body: `Redação recebeu denúncia interna de que a diretoria tentou classificar o ransomware como "manutenção elétrica" por 10 horas.`,
+            addsIntel: { id: `F-206`, type: `fake`, cia: `Boato · Mídia Social`, claim: `Hacker desligou remotamente respiradores da UTI adulto.`, evidence: `Desmentido pela engenharia clínica: equipamentos de suporte vital são offline e autônomos.` },
+            news: { source: `Imprensa`, severity: `breaking`, headline: `Jornal questiona transparência de rede hospitalar diante de incidente com dados sensíveis`, summary: `Especialistas citam risco regulatório quando incidentes de saúde são minimizados publicamente.` }
+          },
+          {
+            id: `mc2-i4`,
+            triggerSec: 300,
+            channel: `Polícia Federal / SOC`,
+            severity: `alta`,
+            title: `Vetor de ataque identificado em servidor sem patch`,
+            body: `Forense isola ponto de entrada e apresenta plano de restauração limpa via backup em 14 horas, exigindo decisão da mesa.`,
+            addsIntel: null,
+            news: { source: `Regulador`, severity: `alert`, headline: `Autoridades sanitárias e de proteção de dados acompanham plano de recuperação da rede`, summary: `Foco na preservação de evidências forenses e segurança assistencial.` }
+          }
+        ],
+        intel: [
+          { id: `F-201`, type: `fact`, cia: `Disponibilidade · Servidores`, claim: `Ransomware cifrou servidores de prontuário (PEP) que estavam sem atualização crítica de segurança.`, evidence: `Análise preliminar do SOC e inventário de ativos.` },
+          { id: `F-202`, type: `fact`, cia: `Integridade · UTI`, claim: `Monitores e equipamentos de UTI operam em rede isolada sem qualquer comprometimento.`, evidence: `Inspeção presencial da Engenharia Clínica em todas as alas.` },
+          { id: `F-203`, type: `fake`, cia: `Boato Viral · Redes`, claim: `Áudio afirma que invasores assumiram o controle de bombas de infusão e respiradores.`, evidence: `Falso: dispositivos médicos de suporte não possuem conectividade com a rede administrativa afetada.` },
+          { id: `F-204`, type: `pending`, cia: `Confidencialidade · Dados Sensíveis`, claim: `Possível exfiltração de base de laudos médicos antes da execução do malware.`, evidence: `Logs de firewall das últimas 24h em extração para validação forense.` }
+        ],
+        news: [
+          { time: `19:40`, source: `SOC`, severity: `breaking`, headline: `Alerta máximo: criptografia detectada em servidores de prontuário hospitalar`, summary: `Protocolo de contingência em papel acionado imediatamente nas emergências.` },
+          { time: `19:52`, source: `Redes`, severity: `breaking`, headline: `Boatos alarmistas sobre UTIs ganham tração em grupos locais`, summary: `Falta de nota oficial alimenta especulações entre familiares.` }
+        ]
+      },
+
+      MC3: {
+        id: `MC3`,
+        code: `MC3`,
+        name: `Logística`,
+        sector: `Cadeia de Suprimentos & E-commerce`,
+        title: `Falha de Validação no Checkout Libera Cargas Sem Pagamento`,
+        description: `Exploit em rotina de validação financeira (float + ausência de teto de negócio) libera TVs e cargas de alto valor sem recebimento e trava a conciliação do WMS em noite de pico.`,
+        initialRisk: 74,
+        initialTrust: 68,
+        presets: [
+          { label: `Bloquear faixa anômala + preservar logs`, posture: `transparencia`, action: `Ativar regra de bloqueio acima do teto, preservar logs antes do patch e contatar clientes honestos afetados`, owner: `Líder Técnico / SOC`, evidence: `F-301 · Casos reproduzidos em código` },
+          { label: `Reabrir checkout silenciosamente`, posture: `ocultacao`, action: `Aplicar patch rápido sem aviso aos clientes recusados nem conciliação das cargas já expedidas`, owner: `Diretoria Executiva`, evidence: `F-302 · Pressão da campanha` },
+          { label: `Conciliar docas com auditoria`, posture: `transparencia`, action: `Reter expedição pendente sem liquidação no gateway e alinhar prazo real com parceiros B2B`, owner: `Consultoria / Auditor`, evidence: `F-304 · Pedidos sem conciliação` }
+        ],
+        injections: [
+          {
+            id: `mc3-i1`,
+            triggerSec: 45,
+            channel: `SAC / Clientes`,
+            severity: `alta`,
+            title: `Clientes honestos recusados por erro de ponto flutuante`,
+            body: `Compradores que pagaram em duas parcelas legítimas (ex.: R$ 1,10 + R$ 2,20) têm pedidos negados com mensagem "desequilíbrio de $0,00".`,
+            addsIntel: { id: `F-305`, type: `fact`, cia: `Disponibilidade · Checkout`, claim: `Erro de aritmética binária (float) está bloqueando compradores legítimos em pagamentos fracionados.`, evidence: `Reproduzido em ambiente isolado: 1.1 + 2.2 - 3.3 != 0.` },
+            news: { source: `Redes`, severity: `breaking`, headline: `Consumidores reclamam de cancelamentos absurdos e vídeo sobre "bug da TV grátis" viraliza`, summary: `Crise combina fraude oportunista com prejuízo real a clientes honestos.` }
+          },
+          {
+            id: `mc3-i2`,
+            triggerSec: 120,
+            channel: `Operação Logística 24/7`,
+            severity: `critica`,
+            title: `1.800 entregas represadas nas docas de distribuição`,
+            body: `Paralisação do WMS ameaça perecíveis e gera multa contratual com transportadoras; diretoria comercial pressiona para reabrir 100% agora.`,
+            addsIntel: null,
+            news: { source: `Imprensa`, severity: `alert`, headline: `Centro de distribuição opera em ritmo reduzido durante pico promocional`, summary: `Parceiros de logística aguardam definição entre parada total e operação degradada.` }
+          },
+          {
+            id: `mc3-i3`,
+            triggerSec: 210,
+            channel: `Consultoria / Auditoria`,
+            severity: `alta`,
+            title: `Patch passou no teste, mas silencia alertas`,
+            body: `Correção em homologação passou nos testes automatizados, porém descarta valores fora de faixa em silêncio sem log nem conciliação com o gateway.`,
+            addsIntel: { id: `F-306`, type: `fake`, cia: `Boato · Fórum`, claim: `Empresa lançou promoção relâmpago secreta de 99% de desconto para zerar estoque.`, evidence: `Falso: trata-se de exploração de validação de entrada insuficiente (CWE-20).` },
+            news: { source: `SOC`, severity: `alert`, headline: `Auditoria veta reabertura total: "um teste passar não encerra o incidente"`, summary: `Exigência de evidência de logs e controle preventivo com dono definido.` }
+          },
+          {
+            id: `mc3-i4`,
+            triggerSec: 300,
+            channel: `Órgão Regulador / Procon`,
+            severity: `alta`,
+            title: `Notificação sobre pedidos já faturados e cancelamentos`,
+            body: `Órgão de defesa do consumidor cobra critério objetivo para pedidos liberados indevidamente e reparação aos clientes honestos bloqueados.`,
+            addsIntel: null,
+            news: { source: `Regulador`, severity: `alert`, headline: `Procon exige transparência sobre critérios de cancelamento e proteção ao consumidor`, summary: `Mesa precisa definir quem decide cada caso e com qual evidência.` }
+          }
+        ],
+        intel: [
+          { id: `F-301`, type: `fact`, cia: `Integridade · Aplicação`, claim: `Rotina de pedidos aceita valores extremos/negativos e permite aprovação de pedido de R$ 1,2 milhão sem teto.`, evidence: `Inspeção de código e execução controlada de casos de abuso.` },
+          { id: `F-302`, type: `fact`, cia: `Integridade · Doca`, claim: `Três cargas de eletrônicos receberam nota fiscal automática sem confirmação financeira no gateway.`, evidence: `Cruzamento entre ERP de faturamento e extrato do adquirente.` },
+          { id: `F-303`, type: `fake`, cia: `Boato · Cupom Secreto`, claim: `Influenciador afirma que código promocional oficial dá TVs gratuitas por tempo limitado.`, evidence: `Não existe campanha; trata-se de abuso deliberado da falha de entrada.` },
+          { id: `F-304`, type: `pending`, cia: `Lacuna · Extensão`, claim: `Quantidade total de pedidos afetados nas últimas 4 horas e se houve entrega física concluída.`, evidence: `Query de conciliação rodando em réplica de leitura.` }
+        ],
+        news: [
+          { time: `20:05`, source: `SOC`, severity: `alert`, headline: `Pico de pedidos anômalos aciona sala de crise na operação de e-commerce e logística`, summary: `Time técnico investiga inconsistência entre valor pago e liberação de mercadoria.` },
+          { time: `20:14`, source: `Redes`, severity: `breaking`, headline: `Tutoriais ensinando a explorar falha no checkout começam a circular`, summary: `Urgência de contenção proporcional sem destruir evidências.` }
+        ]
+      },
+
+      MC4: {
+        id: `MC4`,
+        code: `MC4`,
+        name: `Educação`,
+        sector: `Ecossistema Acadêmico`,
+        title: `Invasão ao Portal Acadêmico e Ameaça sobre Dados de Alunos`,
+        description: `Conta administrativa sem MFA foi comprometida no Ambiente Virtual de Aprendizagem (AVA). Há indícios de consulta indevida e circula comunicado falso cancelando o semestre.`,
+        initialRisk: 70,
+        initialTrust: 65,
+        presets: [
+          { label: `Comunicar comunidade + ativar MFA`, posture: `transparencia`, action: `Revogar sessões suspeitas, ativar MFA obrigatório e enviar comunicado oficial a alunos e responsáveis`, owner: `Comunicação & SAC`, evidence: `F-401 · Sessões revogadas` },
+          { label: `Manter em sigilo durante provas`, posture: `ocultacao`, action: `Resetar senhas silenciosamente sem informar vazamento potencial de dados pessoais`, owner: `Diretoria Executiva`, evidence: `F-404 · Exportação ainda em apuração` },
+          { label: `Notificar ANPD com fatos confirmados`, posture: `transparencia`, action: `Protocolar comunicação preliminar à ANPD delimitando fatos confirmados e lacunas`, owner: `Jurídico & Compliance`, evidence: `F-402 · Diplomas intactos` }
+        ],
+        injections: [
+          {
+            id: `mc4-i1`,
+            triggerSec: 45,
+            channel: `Grupos de Pais & Alunos`,
+            severity: `alta`,
+            title: `Comunicado falsificado anuncia perda de bolsas e notas`,
+            body: `PDF apócrifo com logotipo da instituição circula pedindo recadastramento urgente de dados bancários em link fraudulento.`,
+            addsIntel: { id: `F-405`, type: `fake`, cia: `Phishing · Boato`, claim: `Instituição exige recadastramento bancário via link externo para manter bolsas de estudo.`, evidence: `Domínio fraudulento recém-criado; base de bolsas permanece inalterada.` },
+            news: { source: `Redes`, severity: `breaking`, headline: `Circular falsa sobre cancelamento de semestre e bolsas assusta estudantes`, summary: `Golpistas aproveitam vácuo de comunicação para aplicar phishing.` }
+          },
+          {
+            id: `mc4-i2`,
+            triggerSec: 120,
+            channel: `Atacante / Canal Extorsão`,
+            severity: `critica`,
+            title: `Ameaça de envio de e-mail em massa para responsáveis`,
+            body: `Invasor exige acordo financeiro sigiloso sob pena de disparar mensagens expondo falhas de segurança a todas as famílias.`,
+            addsIntel: null,
+            news: { source: `Imprensa`, severity: `alert`, headline: `Portal educacional investiga pressão de extorsão após acesso indevido ao AVA`, summary: `Especialistas destacam importância da comunicação proativa contra pânico e golpes.` }
+          },
+          {
+            id: `mc4-i3`,
+            triggerSec: 210,
+            channel: `Jurídico / ANPD`,
+            severity: `alta`,
+            title: `Risco agravado envolvendo dados de menores`,
+            body: `Forense confirma exportação de 12 mil registros cadastrais com contatos de responsáveis; prazo legal de notificação passa a correr.`,
+            addsIntel: { id: `F-406`, type: `fact`, cia: `Confidencialidade · LGPD`, claim: `Confirmada exportação não autorizada de tabela cadastral com 12.400 registros de alunos e responsáveis.`, evidence: `Log de auditoria do banco de dados recuperado pelo SOC.` },
+            news: { source: `Regulador`, severity: `breaking`, headline: `LGPD exige notificação transparente quando há risco relevante a dados de menores`, summary: `Omissão pode multiplicar sanções administrativas e dano reputacional.` }
+          },
+          {
+            id: `mc4-i4`,
+            triggerSec: 300,
+            channel: `Coordenação Acadêmica`,
+            severity: `alta`,
+            title: `Decisão sobre semana de avaliações`,
+            body: `Necessidade de decidir entre operar em modo degradado com validação de integridade das notas ou suspender calendário por 48h.`,
+            addsIntel: null,
+            news: { source: `SOC`, severity: `alert`, headline: `Auditoria valida integridade do histórico escolar e cofre de diplomas`, summary: `Condição de retorno depende de MFA completo e revisão de privilégios.` }
+          }
+        ],
+        intel: [
+          { id: `F-401`, type: `fact`, cia: `Confidencialidade · Acesso`, claim: `Credencial administrativa sem MFA comprometida; 280 sessões suspeitas já revogadas.`, evidence: `Logs de autenticação e geolocalização anômala.` },
+          { id: `F-402`, type: `fact`, cia: `Integridade · Diplomas`, claim: `Repositório histórico de diplomas e atas finais permanece intacto em cofre segregado.`, evidence: `Verificação de assinatura criptográfica concluída.` },
+          { id: `F-403`, type: `fake`, cia: `Boato · Redes Sociais`, claim: `Semestre letivo foi anulado e todas as notas do ano foram apagadas irreversivelmente.`, evidence: `Falso: apenas tabela temporária de atividades da última semana está em auditoria.` },
+          { id: `F-404`, type: `pending`, cia: `Confidencialidade · Em apuração`, claim: `Possível exportação de planilhas cadastrais de alunos e responsáveis.`, evidence: `Aguardando correlação dos logs de consulta SQL.` }
+        ],
+        news: [
+          { time: `18:50`, source: `SOC`, severity: `alert`, headline: `Acesso administrativo suspeito bloqueado no Ambiente Virtual de Aprendizagem`, summary: `Mesa de crise avalia impacto em avaliações e dados acadêmicos.` },
+          { time: `19:02`, source: `Redes`, severity: `breaking`, headline: `Estudantes compartilham prints não verificados sobre perda de notas`, summary: `Canal oficial ainda não publicou esclarecimento inicial.` }
+        ]
+      },
+
+      MC5: {
+        id: `MC5`,
+        code: `MC5`,
+        name: `Energia`,
+        sector: `Infraestrutura Crítica Urbana`,
+        title: `Intrusão em Rede Corporativa com Risco de Movimento Lateral ao SCADA`,
+        description: `Baseado em cenários de infraestrutura crítica urbana (Falco et al.): invasor comprometeu rede corporativa via VPN terceirizada e pressiona com ameaça à rede de distribuição elétrica.`,
+        initialRisk: 82,
+        initialTrust: 60,
+        presets: [
+          { label: `Isolar SCADA + acionar PF e Regulador`, posture: `transparencia`, action: `Manter segmentação rígida IT/OT, acionar Polícia Federal/ANEEL e desmentir boato de apagão com dados técnicos`, owner: `Coordenador War Room`, evidence: `F-501 · Telemetria sob controle` },
+          { label: `Negociar para ganhar tempo (tática)`, posture: `transparencia`, action: `Engajar canal de negociação apenas para ganhar tempo de forense e identificar TTPs com apoio da PF`, owner: `Consultoria / Auditor`, evidence: `F-504 · Origem VPN terceirizada` },
+          { label: `Ocultar intrusão da agência reguladora`, posture: `ocultacao`, action: `Tratar incidente apenas internamente sem reportar risco à infraestrutura crítica nem responder à mídia`, owner: `Diretoria Executiva`, evidence: `F-502 · Faturamento isolado` }
+        ],
+        injections: [
+          {
+            id: `mc5-i1`,
+            triggerSec: 45,
+            channel: `Defesa Civil / Imprensa`,
+            severity: `critica`,
+            title: `Boatos de "apagão de 72h" provocam corrida a geradores`,
+            body: `Desinformação em massa gera filas em postos de combustível e sobrecarga no telefone de emergência da concessionária.`,
+            addsIntel: { id: `F-505`, type: `fact`, cia: `Disponibilidade · Rede Elétrica`, claim: `100% das subestações seguem operando dentro dos parâmetros nominais de carga.`, evidence: `Leitura direta do Centro de Operação do Sistema (COS).` },
+            news: { source: `Redes`, severity: `breaking`, headline: `Boato sobre apagão programado de 3 dias causa corrida a postos e supermercados`, summary: `Autoridades urbanas cobram pronunciamento técnico imediato da concessionária.` }
+          },
+          {
+            id: `mc5-i2`,
+            triggerSec: 120,
+            channel: `Atacante / Canal Extorsão`,
+            severity: `critica`,
+            title: `Invasor alega acesso a religadores e exige resgate`,
+            body: `Mensagem ameaça desligar alimentadores no horário de ponta. Equipe de negociação precisa avaliar se é blefe e usar engenharia social defensiva.`,
+            addsIntel: { id: `F-506`, type: `fake`, cia: `Integridade · Blefe OT`, claim: `Atacante possui comando direto sobre religadores automáticos das subestações.`, evidence: `Refutado: print enviado pertence a ambiente de teste desativado em 2022; rede OT está isolada.` },
+            news: { source: `SOC`, severity: `alert`, headline: `Engenharia social defensiva detecta blefe: imagem exibida pelo invasor é de laboratório antigo`, summary: `Negociação técnica ganhou tempo crucial para varredura completa das VLANs.` }
+          },
+          {
+            id: `mc5-i3`,
+            triggerSec: 210,
+            channel: `Agência Reguladora & Polícia Federal`,
+            severity: `alta`,
+            title: `Exigência de protocolo conjunto de infraestrutura crítica`,
+            body: `ANEEL e PF solicitam compartilhamento imediato de indicadores de comprometimento e plano de comunicação pública transparente.`,
+            addsIntel: null,
+            news: { source: `Regulador`, severity: `alert`, headline: `Agência reguladora instala acompanhamento permanente sobre resiliência da rede elétrica`, summary: `Cooperação institucional reforça confiança no fornecimento contínuo.` }
+          },
+          {
+            id: `mc5-i4`,
+            triggerSec: 300,
+            channel: `Engenharia 24/7`,
+            severity: `alta`,
+            title: `Janela de atualização em sistema crítico 24/7`,
+            body: `Aplicar patch definitivo no gateway de telemetria exige janela controlada de 25 minutos com manobra de carga entre alimentadores.`,
+            addsIntel: null,
+            news: { source: `SOC`, severity: `alert`, headline: `Plano de recuperação prevê atualização escalonada sem interrupção aos consumidores`, summary: `Lição reforça necessidade de redundância e simulações regulares de War Room.` }
+          }
+        ],
+        intel: [
+          { id: `F-501`, type: `fact`, cia: `Disponibilidade · SCADA/OT`, claim: `Segmentação IT/OT bloqueou movimento lateral; subestações operam normalmente sob supervisão assistida.`, evidence: `Auditoria de firewall industrial e confirmação do COS.` },
+          { id: `F-502`, type: `fact`, cia: `Disponibilidade · Corporativo`, claim: `Portal de faturamento e agência virtual suspensos preventivamente após isolamento de VLANs.`, evidence: `Registro de mudança emergencial aprovado pelo SOC.` },
+          { id: `F-503`, type: `fake`, cia: `Boato Urbano · Mensageiros`, claim: `Apagão irreversível de 72 horas atingirá toda a região metropolitana à meia-noite.`, evidence: `Desmentido pela operação do sistema elétrico; não há falha de geração ou transmissão.` },
+          { id: `F-504`, type: `pending`, cia: `Integridade · Terceiros`, claim: `Escopo completo das credenciais usadas na VPN de manutenção de fornecedor terceirizado.`, evidence: `Análise forense em andamento nos logs do concentrador VPN.` }
+        ],
+        news: [
+          { time: `20:00`, source: `SOC`, severity: `alert`, headline: `Isolamento preventivo entre rede corporativa e SCADA após alerta em VPN`, summary: `Operação elétrica mantida sob monitoramento contínuo da War Room MC5.` },
+          { time: `20:09`, source: `Imprensa`, severity: `alert`, headline: `Consumidores relatam instabilidade no aplicativo de segunda via de faturas`, summary: `Empresa avalia postura de comunicação enquanto verifica extensão.` }
+        ]
+      }
+    };
+
+    /* ==========================================================
+       APPLICATION STATE (PERSISTED PER MESA)
+       ========================================================== */
+    const MESA_ORDER = [`MC1`, `MC2`, `MC3`, `MC4`, `MC5`];
+    const SPEEDS = [1, 5, 15];
+
+    let appState = createInitialState();
+    let timerIntervalId = null;
+
+    function cloneDeep(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function createInitialState() {
+      const mesas = {};
+      MESA_ORDER.forEach(function(key) {
+        const tmpl = MESAS_CATALOG[key];
+        mesas[key] = {
+          elapsedSec: 0,
+          phase: `during`,
+          risk: tmpl.initialRisk,
+          trust: tmpl.initialTrust,
+          firedInjectionIds: [],
+          customInjections: [],
+          intel: cloneDeep(tmpl.intel),
+          news: cloneDeep(tmpl.news),
+          decisions: []
+        };
+      });
+      return {
+        activeMesa: `MC1`,
+        timerRunning: false,
+        speedIdx: 0,
+        compactMode: false,
+        intelFilter: `all`,
+        newsFilter: `all`,
+        logScope: `mesa`,
+        selectedPosture: `transparencia`,
+        mesas: mesas
+      };
+    }
+
+    /* ==========================================================
+       PERSISTENCE VIA GEMINI NOTEBOOK API SHIM
+       ========================================================== */
+    async function loadPersistedState() {
+      if (!window.notebookAppApi || typeof window.notebookAppApi.getAppState !== `function`) {
+        return null;
+      }
+      try {
+        return await window.notebookAppApi.getAppState();
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function savePersistedState() {
+      if (!window.notebookAppApi || typeof window.notebookAppApi.setAppState !== `function`) {
+        return;
+      }
+      try {
+        await window.notebookAppApi.setAppState(appState);
+      } catch (err) {
+        /* ignore sandbox persistence errors outside host */
+      }
+    }
+
+    function hydrateState(saved) {
+      if (!saved || typeof saved !== `object` || !saved.mesas) return;
+      const fresh = createInitialState();
+      appState.activeMesa = MESA_ORDER.includes(saved.activeMesa) ? saved.activeMesa : fresh.activeMesa;
+      appState.speedIdx = typeof saved.speedIdx === `number` ? saved.speedIdx % SPEEDS.length : 0;
+      appState.compactMode = Boolean(saved.compactMode);
+      appState.intelFilter = saved.intelFilter || `all`;
+      appState.newsFilter = saved.newsFilter || `all`;
+      appState.logScope = saved.logScope || `mesa`;
+      appState.selectedPosture = saved.selectedPosture || `transparencia`;
+      MESA_ORDER.forEach(function(key) {
+        if (saved.mesas[key]) {
+          appState.mesas[key] = Object.assign(cloneDeep(fresh.mesas[key]), saved.mesas[key]);
+        }
+      });
+    }
+
+    /* ==========================================================
+       HELPERS & FORMATTING
+       ========================================================== */
+    function formatClock(totalSeconds) {
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      return String(mins).padStart(2, `0`) + `:` + String(secs).padStart(2, `0`);
+    }
+
+    function clampNum(val, min, max) {
+      return Math.max(min, Math.min(max, Math.round(val)));
+    }
+
+    function getActiveMesaCatalog() {
+      return MESAS_CATALOG[appState.activeMesa];
+    }
+
+    function getActiveMesaState() {
+      return appState.mesas[appState.activeMesa];
+    }
+
+    function getAllInjectionsForMesa(mesaKey) {
+      const cat = MESAS_CATALOG[mesaKey];
+      const st = appState.mesas[mesaKey];
+      return cat.injections.concat(st.customInjections || []);
+    }
+
+    function escapeHtml(str) {
+      return String(str || ``)
+        .replace(/&/g, `&amp;`)
+        .replace(/</g, `&lt;`)
+        .replace(/>/g, `&gt;`)
+        .replace(/"/g, `&quot;`);
+    }
+
+    /* ==========================================================
+       TIMER & TIMED INJECTIONS ENGINE
+       ========================================================== */
+    function toggleTimer() {
+      appState.timerRunning = !appState.timerRunning;
+      syncTimerLoop();
+      renderClockControls();
+      savePersistedState();
+    }
+
+    function syncTimerLoop() {
+      if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+        timerIntervalId = null;
+      }
+      if (appState.timerRunning) {
+        timerIntervalId = setInterval(function() {
+          const step = SPEEDS[appState.speedIdx] || 1;
+          const st = getActiveMesaState();
+          st.elapsedSec += step;
+          checkDueInjections(appState.activeMesa);
+          renderClockOnly();
+          renderInjections();
+          renderKPIs();
+          renderMesaBar();
+          savePersistedState();
+        }, 1000);
+      }
+    }
+
+    function cycleSpeed() {
+      appState.speedIdx = (appState.speedIdx + 1) % SPEEDS.length;
+      renderClockControls();
+      savePersistedState();
+    }
+
+    function toggleCompactMode() {
+      appState.compactMode = !appState.compactMode;
+      document.body.classList.toggle(`is-compact`, appState.compactMode);
+      const btn = document.getElementById(`btn-compact-mode`);
+      if (btn) btn.textContent = appState.compactMode ? `Modo Padrão` : `iFrame Compacto`;
+      savePersistedState();
+    }
+
+    function resetSimulation(btn) {
+      if (btn && btn.dataset.armed !== `true`) {
+        btn.dataset.armed = `true`;
+        btn.textContent = `Confirmar Reset?`;
+        setTimeout(function() {
+          if (btn.dataset.armed === `true`) {
+            btn.dataset.armed = `false`;
+            btn.textContent = `Resetar`;
+          }
+        }, 4000);
+        return;
+      }
+      if (btn) {
+        btn.dataset.armed = `false`;
+        btn.textContent = `Resetar`;
+      }
+      appState.timerRunning = false;
+      syncTimerLoop();
+      const activeKey = appState.activeMesa;
+      const fresh = createInitialState();
+      appState.mesas[activeKey] = fresh.mesas[activeKey];
+      renderAll();
+      savePersistedState();
+    }
+
+    function checkDueInjections(mesaKey) {
+      const cat = MESAS_CATALOG[mesaKey];
+      const st = appState.mesas[mesaKey];
+      let changed = false;
+      cat.injections.forEach(function(inj) {
+        if (st.elapsedSec >= inj.triggerSec && !st.firedInjectionIds.includes(inj.id)) {
+          activateInjection(mesaKey, inj);
+          changed = true;
+        }
+      });
+      if (changed && mesaKey === appState.activeMesa) {
+        renderIntelGrid();
+        renderNewsFeed();
+        renderRiskMatrix();
+      }
+    }
+
+    function activateInjection(mesaKey, inj) {
+      const st = appState.mesas[mesaKey];
+      if (!st.firedInjectionIds.includes(inj.id)) {
+        st.firedInjectionIds.push(inj.id);
+      }
+      const riskBump = inj.severity === `critica` ? 7 : 4;
+      const trustDrop = inj.severity === `critica` ? 6 : 4;
+      st.risk = clampNum(st.risk + riskBump, 5, 99);
+      st.trust = clampNum(st.trust - trustDrop, 5, 99);
+
+      if (inj.addsIntel) {
+        const exists = st.intel.some(function(item) { return item.id === inj.addsIntel.id; });
+        if (!exists) {
+          st.intel.unshift(cloneDeep(inj.addsIntel));
+        }
+      }
+      if (inj.news) {
+        st.news.unshift({
+          time: formatClock(st.elapsedSec),
+          source: inj.news.source,
+          severity: inj.news.severity,
+          headline: inj.news.headline,
+          summary: inj.news.summary
+        });
+      }
+    }
+
+    function fireNextInjection() {
+      const cat = getActiveMesaCatalog();
+      const st = getActiveMesaState();
+      const nextInj = cat.injections.find(function(inj) {
+        return !st.firedInjectionIds.includes(inj.id);
+      });
+      if (!nextInj) return;
+      if (st.elapsedSec < nextInj.triggerSec) {
+        st.elapsedSec = nextInj.triggerSec;
+      }
+      activateInjection(appState.activeMesa, nextInj);
+      renderAll();
+      savePersistedState();
+    }
+
+    function toggleCustomInjectionForm() {
+      const drawer = document.getElementById(`custom-injection-drawer`);
+      if (!drawer) return;
+      drawer.classList.toggle(`is-hidden`);
+      const msg = document.getElementById(`custom-inj-msg`);
+      if (msg) {
+        msg.textContent = ``;
+        msg.className = `inline-msg`;
+      }
+    }
+
+    function submitCustomInjection() {
+      const channelEl = document.getElementById(`custom-inj-channel`);
+      const severityEl = document.getElementById(`custom-inj-severity`);
+      const titleEl = document.getElementById(`custom-inj-title`);
+      const descEl = document.getElementById(`custom-inj-desc`);
+      const msgEl = document.getElementById(`custom-inj-msg`);
+      if (!channelEl || !severityEl || !titleEl || !descEl || !msgEl) return;
+
+      const title = titleEl.value.trim();
+      const body = descEl.value.trim();
+      if (title.length < 4 || body.length < 8) {
+        msgEl.textContent = `Preencha título e descrição da injeção para disparar ao vivo.`;
+        msgEl.className = `inline-msg is-error`;
+        return;
+      }
+
+      const st = getActiveMesaState();
+      const customId = `custom-` + Date.now();
+      const channel = channelEl.value;
+      const severity = severityEl.value;
+      const newInj = {
+        id: customId,
+        triggerSec: st.elapsedSec,
+        channel: channel,
+        severity: severity,
+        title: title,
+        body: body,
+        addsIntel: null,
+        news: {
+          source: channel.indexOf(`Regulador`) >= 0 ? `Regulador` : (channel.indexOf(`Imprensa`) >= 0 ? `Imprensa` : (channel.indexOf(`SOC`) >= 0 ? `SOC` : `Redes`)),
+          severity: severity === `critica` ? `breaking` : `alert`,
+          headline: title,
+          summary: body
+        }
+      };
+
+      st.customInjections.push(newInj);
+      activateInjection(appState.activeMesa, newInj);
+
+      titleEl.value = ``;
+      descEl.value = ``;
+      const drawer = document.getElementById(`custom-injection-drawer`);
+      if (drawer) drawer.classList.add(`is-hidden`);
+
+      renderAll();
+      savePersistedState();
+    }
+
+    /* ==========================================================
+       MESA SELECTION & NEGOTIATION PHASE
+       ========================================================== */
+    function selectMesa(mesaKey) {
+      if (!MESAS_CATALOG[mesaKey]) return;
+      appState.activeMesa = mesaKey;
+      renderAll();
+      savePersistedState();
+    }
+
+    function setNegotiationPhase(phase) {
+      const st = getActiveMesaState();
+      st.phase = phase;
+      renderContextStrip();
+      savePersistedState();
+    }
+
+    /* ==========================================================
+       INTELLIGENCE TRIAGE: FATOS (VERDE) vs FAKES (VERMELHO)
+       ========================================================== */
+    function setIntelFilter(filterKey) {
+      appState.intelFilter = filterKey;
+      renderIntelGrid();
+      savePersistedState();
+    }
+
+    function setIntelType(intelId, newType) {
+      const st = getActiveMesaState();
+      const item = st.intel.find(function(x) { return x.id === intelId; });
+      if (!item || item.type === newType) return;
+
+      const prevType = item.type;
+      item.type = newType;
+
+      if (newType === `fact` && prevType !== `fact`) {
+        st.risk = clampNum(st.risk - 4, 5, 99);
+        st.trust = clampNum(st.trust + 3, 5, 99);
+      } else if (newType === `fake` && prevType !== `fake`) {
+        st.risk = clampNum(st.risk - 3, 5, 99);
+        st.trust = clampNum(st.trust + 4, 5, 99);
+        st.news.unshift({
+          time: formatClock(st.elapsedSec),
+          source: `SOC`,
+          severity: `official`,
+          headline: `Boato desmentido pela triagem da War Room (${item.id})`,
+          summary: `Mesa classificou alegação como Fake/Boato: "${item.claim}".`
+        });
+      }
+
+      renderAll();
+      savePersistedState();
+    }
+
+    function toggleAddIntelForm() {
+      const drawer = document.getElementById(`add-intel-drawer`);
+      if (!drawer) return;
+      drawer.classList.toggle(`is-hidden`);
+      const msg = document.getElementById(`new-intel-msg`);
+      if (msg) {
+        msg.textContent = ``;
+        msg.className = `inline-msg`;
+      }
+    }
+
+    function submitNewIntel() {
+      const typeEl = document.getElementById(`new-intel-type`);
+      const ciaEl = document.getElementById(`new-intel-cia`);
+      const claimEl = document.getElementById(`new-intel-claim`);
+      const evEl = document.getElementById(`new-intel-evidence`);
+      const msgEl = document.getElementById(`new-intel-msg`);
+      if (!typeEl || !ciaEl || !claimEl || !evEl || !msgEl) return;
+
+      const claim = claimEl.value.trim();
+      const evidence = evEl.value.trim();
+      const cia = ciaEl.value.trim() || `Triagem War Room`;
+      if (claim.length < 6 || evidence.length < 6) {
+        msgEl.textContent = `Informe a afirmação e a evidência ou motivo da classificação.`;
+        msgEl.className = `inline-msg is-error`;
+        return;
+      }
+
+      const st = getActiveMesaState();
+      const nextNum = 100 + st.intel.length + 1;
+      st.intel.unshift({
+        id: `${appState.activeMesa.slice(2)}-${nextNum}`,
+        type: typeEl.value,
+        cia: cia,
+        claim: claim,
+        evidence: evidence
+      });
+
+      claimEl.value = ``;
+      evEl.value = ``;
+      ciaEl.value = ``;
+      const drawer = document.getElementById(`add-intel-drawer`);
+      if (drawer) drawer.classList.add(`is-hidden`);
+
+      renderAll();
+      savePersistedState();
+    }
+
+    /* ==========================================================
+       DECISIONS LOG (TRANSPARÊNCIA vs OCULTAÇÃO - A2)
+       ========================================================== */
+    function selectPosture(posture) {
+      appState.selectedPosture = posture;
+      renderPostureButtons();
+      savePersistedState();
+    }
+
+    function applyDecisionPreset(idx) {
+      const cat = getActiveMesaCatalog();
+      const preset = cat.presets[idx];
+      if (!preset) return;
+      appState.selectedPosture = preset.posture;
+      const actionEl = document.getElementById(`dec-action`);
+      const ownerEl = document.getElementById(`dec-owner`);
+      const evEl = document.getElementById(`dec-evidence`);
+      if (actionEl) actionEl.value = preset.action;
+      if (ownerEl) ownerEl.value = preset.owner;
+      if (evEl) evEl.value = preset.evidence;
+      renderPostureButtons();
+    }
+
+    function setLogScope(scope) {
+      appState.logScope = scope;
+      renderDecisionTable();
+      savePersistedState();
+    }
+
+    function submitDecision() {
+      const actionEl = document.getElementById(`dec-action`);
+      const ownerEl = document.getElementById(`dec-owner`);
+      const evEl = document.getElementById(`dec-evidence`);
+      const msgEl = document.getElementById(`decision-msg`);
+      if (!actionEl || !ownerEl || !evEl || !msgEl) return;
+
+      const action = actionEl.value.trim();
+      const owner = ownerEl.value;
+      const evidence = evEl.value.trim();
+
+      if (action.length < 8) {
+        msgEl.textContent = `Descreva a decisão tomada pela mesa antes de registrar no A2.`;
+        msgEl.className = `inline-msg is-error`;
+        return;
+      }
+      if (evidence.length < 4) {
+        msgEl.textContent = `Toda decisão no War Room exige uma evidência ou base factual nomeada.`;
+        msgEl.className = `inline-msg is-error`;
+        return;
+      }
+
+      const st = getActiveMesaState();
+      const posture = appState.selectedPosture;
+      const timeStr = formatClock(st.elapsedSec);
+
+      let riskDelta = 0;
+      let trustDelta = 0;
+
+      if (posture === `transparencia`) {
+        riskDelta = -8;
+        trustDelta = +7;
+        st.news.unshift({
+          time: timeStr,
+          source: `Regulador`,
+          severity: `official`,
+          headline: `Mesa ${appState.activeMesa} emite boletim transparente sob responsabilidade de ${owner}`,
+          summary: `Ação registrada: ${action}. Base factual: ${evidence}.`
+        });
+      } else {
+        riskDelta = -3;
+        trustDelta = -10;
+        st.news.unshift({
+          time: timeStr,
+          source: `Imprensa`,
+          severity: `breaking`,
+          headline: `Vazamento expõe tentativa de ocultação na mesa ${appState.activeMesa} (risco Caso Uber)`,
+          summary: `Decisão sigilosa ("${action}") vaza para redações, elevando pressão regulatória e desconfiança pública.`
+        });
+      }
+
+      st.risk = clampNum(st.risk + riskDelta, 5, 99);
+      st.trust = clampNum(st.trust + trustDelta, 5, 99);
+
+      st.decisions.unshift({
+        id: `DEC-` + Date.now(),
+        mesa: appState.activeMesa,
+        time: timeStr,
+        posture: posture,
+        action: action,
+        owner: owner,
+        evidence: evidence,
+        riskAfter: st.risk,
+        trustAfter: st.trust
+      });
+
+      actionEl.value = ``;
+      evEl.value = ``;
+      msgEl.textContent = posture === `transparencia`
+        ? `Decisão transparente registrada no A2. Confiança pública fortalecida (+7%).`
+        : `Decisão de ocultação registrada no A2. Atenção: vazamento simulado reduziu confiança (-10%).`;
+      msgEl.className = posture === `transparencia` ? `inline-msg is-success` : `inline-msg is-error`;
+
+      renderAll();
+      savePersistedState();
+    }
+
+    function exportDecisionsCsv() {
+      const rows = [`Hora,Mesa,Postura,Decisao,Responsavel,Evidencia,Risco_Pos,Confianca_Pos`];
+      MESA_ORDER.forEach(function(mKey) {
+        const list = appState.mesas[mKey].decisions || [];
+        list.forEach(function(d) {
+          const line = [
+            d.time,
+            d.mesa,
+            d.posture === `transparencia` ? `Transparencia` : `Ocultacao`,
+            `"` + String(d.action).replace(/"/g, `""`) + `"`,
+            `"` + String(d.owner).replace(/"/g, `""`) + `"`,
+            `"` + String(d.evidence).replace(/"/g, `""`) + `"`,
+            d.riskAfter + `%`,
+            d.trustAfter + `%`
+          ].join(`,`);
+          rows.push(line);
+        });
+      });
+
+      const csvContent = rows.join(`\n`);
+      const filename = `war-room-decisoes-a2-${appState.activeMesa.toLowerCase()}.csv`;
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === `function`) {
+        window.notebookAppApi.triggerFileDownload({
+          content: csvContent,
+          contentType: `text/csv`,
+          encoding: `UTF-8`,
+          filename: filename
+        });
+      } else {
+        const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement(`a`);
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      const msgEl = document.getElementById(`decision-msg`);
+      if (msgEl) {
+        msgEl.textContent = `Exportação CSV gerada (${rows.length - 1} registro(s)).`;
+        msgEl.className = `inline-msg is-success`;
+      }
+    }
+
+    function setNewsFilter(filterKey) {
+      appState.newsFilter = filterKey;
+      renderNewsFeed();
+      savePersistedState();
+    }
+
+    /* ==========================================================
+       RENDERING PIPELINE
+       ========================================================== */
+    function renderAll() {
+      document.body.classList.toggle(`is-compact`, Boolean(appState.compactMode));
+      renderClockControls();
+      renderClockOnly();
+      renderMesaBar();
+      renderContextStrip();
+      renderKPIs();
+      renderInjections();
+      renderIntelGrid();
+      renderPostureButtons();
+      renderDecisionPresets();
+      renderDecisionTable();
+      renderNewsFeed();
+      renderRiskMatrix();
+    }
+
+    function renderClockOnly() {
+      const clockEl = document.getElementById(`sim-clock`);
+      if (clockEl) {
+        clockEl.textContent = formatClock(getActiveMesaState().elapsedSec);
+      }
+    }
+
+    function renderClockControls() {
+      const labelEl = document.getElementById(`timer-btn-label`);
+      if (labelEl) labelEl.textContent = appState.timerRunning ? `Pausar` : `Iniciar`;
+      const speedBtn = document.getElementById(`btn-speed`);
+      if (speedBtn) speedBtn.textContent = (SPEEDS[appState.speedIdx] || 1) + `× Vel`;
+      const compactBtn = document.getElementById(`btn-compact-mode`);
+      if (compactBtn) compactBtn.textContent = appState.compactMode ? `Modo Padrão` : `iFrame Compacto`;
+    }
+
+    function renderMesaBar() {
+      const bar = document.getElementById(`mesa-bar`);
+      if (!bar) return;
+      const html = MESA_ORDER.map(function(key) {
+        const cat = MESAS_CATALOG[key];
+        const st = appState.mesas[key];
+        const isActive = appState.activeMesa === key;
+        const riskClass = st.risk >= 70 ? `is-high` : (st.risk >= 45 ? `is-med` : `is-low`);
+        return `
+          <button type="button" class="mesa-btn ${isActive ? `is-active` : ``}" onclick="selectMesa('${key}')" aria-pressed="${isActive ? `true` : `false`}">
+            <div class="mesa-top">
+              <span class="mesa-code">${cat.code}</span>
+              <span class="mesa-risk-pill ${riskClass}">Risco ${st.risk}%</span>
+            </div>
+            <span class="mesa-name">${cat.name}</span>
+            <span class="mesa-sector">${cat.sector}</span>
+          </button>
+        `;
+      }).join(``);
+      bar.innerHTML = html;
+    }
+
+    function renderContextStrip() {
+      const cat = getActiveMesaCatalog();
+      const st = getActiveMesaState();
+      const tagEl = document.getElementById(`active-mesa-tag`);
+      const titleEl = document.getElementById(`active-scenario-title`);
+      const descEl = document.getElementById(`active-scenario-desc`);
+      if (tagEl) tagEl.textContent = `${cat.code} · ${cat.sector}`;
+      if (titleEl) titleEl.textContent = cat.title;
+      if (descEl) descEl.textContent = cat.description;
+
+      [`pre`, `during`, `post`].forEach(function(p) {
+        const btn = document.getElementById(`phase-${p}`);
+        if (btn) btn.classList.toggle(`is-active`, st.phase === p);
+      });
+    }
+
+    function renderKPIs() {
+      const st = getActiveMesaState();
+      const riskEl = document.getElementById(`kpi-risk`);
+      const riskLbl = document.getElementById(`kpi-risk-label`);
+      const trustEl = document.getElementById(`kpi-trust`);
+      const trustLbl = document.getElementById(`kpi-trust-label`);
+      const intelEl = document.getElementById(`kpi-intel`);
+      const intelLbl = document.getElementById(`kpi-intel-label`);
+      const decEl = document.getElementById(`kpi-decisions`);
+      const decLbl = document.getElementById(`kpi-decisions-label`);
+
+      if (riskEl) riskEl.textContent = st.risk + `%`;
+      if (riskLbl) {
+        if (st.risk >= 70) {
+          riskLbl.textContent = `Crítico · Ação imediata requerida`;
+          riskLbl.className = `metric-delta is-danger`;
+        } else if (st.risk >= 45) {
+          riskLbl.textContent = `Moderado · Contenção parcial ativa`;
+          riskLbl.className = `metric-delta is-warning`;
+        } else {
+          riskLbl.textContent = `Controlado · Risco residual monitorado`;
+          riskLbl.className = `metric-delta is-positive`;
+        }
+      }
+
+      if (trustEl) trustEl.textContent = st.trust + `%`;
+      if (trustLbl) {
+        if (st.trust >= 70) {
+          trustLbl.textContent = `Estável · Comunicação transparente`;
+          trustLbl.className = `metric-delta is-positive`;
+        } else if (st.trust >= 45) {
+          trustLbl.textContent = `Sob pressão · Boatos em circulação`;
+          trustLbl.className = `metric-delta is-warning`;
+        } else {
+          trustLbl.textContent = `Crise de imagem · Repercussão negativa`;
+          trustLbl.className = `metric-delta is-danger`;
+        }
+      }
+
+      const factsCount = st.intel.filter(function(i) { return i.type === `fact`; }).length;
+      const fakesCount = st.intel.filter(function(i) { return i.type === `fake`; }).length;
+      const pendCount = st.intel.filter(function(i) { return i.type === `pending`; }).length;
+
+      if (intelEl) intelEl.textContent = `${factsCount} Fatos · ${fakesCount} Fakes`;
+      if (intelLbl) intelLbl.textContent = `${pendCount} item(ns) aguardando verificação`;
+
+      const decCount = st.decisions.length;
+      const transpCount = st.decisions.filter(function(d) { return d.posture === `transparencia`; }).length;
+      if (decEl) decEl.textContent = String(decCount);
+      if (decLbl) {
+        if (decCount === 0) {
+          decLbl.textContent = `Nenhuma decisão registrada ainda`;
+          decLbl.className = `metric-delta`;
+        } else {
+          const pct = Math.round((transpCount / decCount) * 100);
+          decLbl.textContent = `${pct}% transparência (${transpCount} de ${decCount})`;
+          decLbl.className = pct >= 50 ? `metric-delta is-positive` : `metric-delta is-danger`;
+        }
+      }
+    }
+
+    function renderInjections() {
+      const cat = getActiveMesaCatalog();
+      const st = getActiveMesaState();
+      const listEl = document.getElementById(`injection-list`);
+      const fillEl = document.getElementById(`inj-progress-fill`);
+      const nextBtn = document.getElementById(`btn-fire-next`);
+      if (!listEl) return;
+
+      const allInjections = getAllInjectionsForMesa(appState.activeMesa);
+      const totalBuiltIn = cat.injections.length;
+      const firedBuiltIn = cat.injections.filter(function(i) {
+        return st.firedInjectionIds.includes(i.id);
+      }).length;
+
+      if (fillEl) {
+        fillEl.style.width = totalBuiltIn > 0 ? Math.round((firedBuiltIn / totalBuiltIn) * 100) + `%` : `0%`;
+      }
+      if (nextBtn) {
+        nextBtn.disabled = firedBuiltIn >= totalBuiltIn;
+      }
+
+      const html = allInjections.map(function(inj) {
+        const isFired = st.firedInjectionIds.includes(inj.id);
+        const stateCls = isFired ? (inj.severity === `critica` ? `is-critical` : `is-fired`) : ``;
+        const statusText = isFired ? `Disparada` : `Agendada (${formatClock(inj.triggerSec)})`;
+        const statusChipCls = isFired ? (inj.severity === `critica` ? `is-fake` : `is-pending`) : ``;
+        return `
+          <div class="injection-card ${stateCls}">
+            <span class="inj-time">${formatClock(inj.triggerSec)}</span>
+            <div>
+              <h3 class="inj-title">${escapeHtml(inj.title)}</h3>
+              <p class="inj-body">${isFired ? escapeHtml(inj.body) : `Aguardando janela temporal ou disparo manual do facilitador.`}</p>
+              <div class="inj-meta">
+                <span class="status-chip">${escapeHtml(inj.channel)}</span>
+                <span class="status-chip ${statusChipCls}">${statusText}</span>
+              </div>
+            </div>
+            <div>
+              ${isFired
+                ? `<span class="status-chip is-cyan">Em pauta</span>`
+                : `<button type="button" class="btn btn-compact" onclick="fireSpecificInjection('${inj.id}')">Disparar</button>`}
+            </div>
+          </div>
+        `;
+      }).join(``);
+
+      listEl.innerHTML = html;
+    }
+
+    function fireSpecificInjection(injId) {
+      const all = getAllInjectionsForMesa(appState.activeMesa);
+      const target = all.find(function(i) { return i.id === injId; });
+      if (!target) return;
+      const st = getActiveMesaState();
+      if (st.elapsedSec < target.triggerSec) {
+        st.elapsedSec = target.triggerSec;
+      }
+      activateInjection(appState.activeMesa, target);
+      renderAll();
+      savePersistedState();
+    }
+
+    function renderIntelGrid() {
+      const st = getActiveMesaState();
+      const gridEl = document.getElementById(`intel-grid`);
+      if (!gridEl) return;
+
+      [`all`, `fact`, `fake`, `pending`].forEach(function(f) {
+        const btn = document.getElementById(`filter-intel-${f}`);
+        if (btn) btn.classList.toggle(`is-active`, appState.intelFilter === f);
+      });
+
+      const filtered = st.intel.filter(function(item) {
+        return appState.intelFilter === `all` || item.type === appState.intelFilter;
+      });
+
+      if (filtered.length === 0) {
+        gridEl.innerHTML = `<div class="well">Nenhum item de inteligência nesta categoria para a mesa ${appState.activeMesa}.</div>`;
+        return;
+      }
+
+      gridEl.innerHTML = filtered.map(function(item) {
+        const stateCls = item.type === `fact` ? `state-fact` : (item.type === `fake` ? `state-fake` : `state-pending`);
+        const badgeCls = item.type === `fact` ? `is-fact` : (item.type === `fake` ? `is-fake` : `is-pending`);
+        const badgeLbl = item.type === `fact` ? `Fato Confirmado` : (item.type === `fake` ? `Fake / Boato` : `Em Verificação`);
+        return `
+          <article class="intel-card ${stateCls}">
+            <div>
+              <div class="intel-top">
+                <span class="data-label">${escapeHtml(item.id)} · ${escapeHtml(item.cia)}</span>
+                <span class="status-chip ${badgeCls}">${badgeLbl}</span>
+              </div>
+              <p class="intel-claim">${escapeHtml(item.claim)}</p>
+              <p class="intel-evidence">Evidência: ${escapeHtml(item.evidence)}</p>
+            </div>
+            <div class="intel-toggle-bar" role="group" aria-label="Alternar classificação de ${escapeHtml(item.id)}">
+              <button type="button" class="tri-btn ${item.type === `fact` ? `is-fact` : ``}" onclick="setIntelType('${item.id}', 'fact')">Fato (Verde)</button>
+              <button type="button" class="tri-btn ${item.type === `fake` ? `is-fake` : ``}" onclick="setIntelType('${item.id}', 'fake')">Fake (Vermelho)</button>
+              <button type="button" class="tri-btn ${item.type === `pending` ? `is-pending` : ``}" onclick="setIntelType('${item.id}', 'pending')">Verificar</button>
+            </div>
+          </article>
+        `;
+      }).join(``);
+    }
+
+    function renderPostureButtons() {
+      const tBtn = document.getElementById(`posture-transparency`);
+      const cBtn = document.getElementById(`posture-concealment`);
+      if (tBtn) tBtn.classList.toggle(`is-selected`, appState.selectedPosture === `transparencia`);
+      if (cBtn) cBtn.classList.toggle(`is-selected`, appState.selectedPosture === `ocultacao`);
+    }
+
+    function renderDecisionPresets() {
+      const container = document.getElementById(`decision-presets`);
+      if (!container) return;
+      const cat = getActiveMesaCatalog();
+      container.innerHTML = cat.presets.map(function(p, idx) {
+        return `<button type="button" class="preset-btn" onclick="applyDecisionPreset(${idx})">${escapeHtml(p.label)}</button>`;
+      }).join(``);
+    }
+
+    function renderDecisionTable() {
+      const tbody = document.getElementById(`decision-table-body`);
+      const cap = document.getElementById(`log-table-caption`);
+      if (!tbody) return;
+
+      const mBtn = document.getElementById(`log-scope-mesa`);
+      const aBtn = document.getElementById(`log-scope-all`);
+      if (mBtn) mBtn.classList.toggle(`is-active`, appState.logScope === `mesa`);
+      if (aBtn) aBtn.classList.toggle(`is-active`, appState.logScope === `all`);
+
+      let rows = [];
+      if (appState.logScope === `mesa`) {
+        rows = getActiveMesaState().decisions.slice();
+        if (cap) cap.textContent = `Histórico da Mesa ${appState.activeMesa} (${rows.length})`;
+      } else {
+        MESA_ORDER.forEach(function(k) {
+          rows = rows.concat(appState.mesas[k].decisions || []);
+        });
+        if (cap) cap.textContent = `Histórico Consolidado de Todas as Mesas (${rows.length})`;
+      }
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--on-surface-variant);">Nenhuma decisão registrada até o momento. Escolha Transparência ou Ocultação acima e registre a primeira deliberação da mesa.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(function(d) {
+        const isTransp = d.posture === `transparencia`;
+        return `
+          <tr>
+            <td class="td-mono">${escapeHtml(d.time)}</td>
+            <td class="td-mono">${escapeHtml(d.mesa)}</td>
+            <td><span class="status-chip ${isTransp ? `is-fact` : `is-fake`}">${isTransp ? `Transparência` : `Ocultação`}</span></td>
+            <td>
+              <div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(d.action)}</div>
+              <div style="font-size: 0.78rem; color: var(--on-surface-variant);">Base: ${escapeHtml(d.evidence)}</div>
+            </td>
+            <td>${escapeHtml(d.owner)}</td>
+          </tr>
+        `;
+      }).join(``);
+    }
+
+    function renderNewsFeed() {
+      const st = getActiveMesaState();
+      const feedEl = document.getElementById(`news-feed`);
+      const badgeEl = document.getElementById(`news-count-badge`);
+      if (!feedEl) return;
+
+      const filterMap = {
+        all: `news-filter-all`,
+        Imprensa: `news-filter-press`,
+        Redes: `news-filter-social`,
+        Regulador: `news-filter-reg`
+      };
+      Object.keys(filterMap).forEach(function(key) {
+        const btn = document.getElementById(filterMap[key]);
+        if (btn) btn.classList.toggle(`is-active`, appState.newsFilter === key);
+      });
+
+      const items = st.news.filter(function(n) {
+        return appState.newsFilter === `all` || n.source === appState.newsFilter;
+      });
+
+      if (badgeEl) badgeEl.textContent = st.news.length + ` alerta(s)`;
+
+      if (items.length === 0) {
+        feedEl.innerHTML = `<div class="well">Sem boletins neste filtro no momento.</div>`;
+        return;
+      }
+
+      feedEl.innerHTML = items.map(function(n) {
+        const cls = n.severity === `breaking` ? `is-breaking` : (n.severity === `official` ? `is-official` : ``);
+        const tagCls = n.severity === `breaking` ? `is-fake` : (n.severity === `official` ? `is-fact` : `is-pending`);
+        const tagLabel = n.severity === `breaking` ? `Urgente` : (n.severity === `official` ? `Oficial` : `Alerta`);
+        return `
+          <article class="news-item ${cls}">
+            <div class="news-meta">
+              <span>${escapeHtml(n.time)} · ${escapeHtml(n.source)}</span>
+              <span class="status-chip ${tagCls}">${tagLabel}</span>
+            </div>
+            <h3 class="news-headline">${escapeHtml(n.headline)}</h3>
+            <p class="news-summary">${escapeHtml(n.summary)}</p>
+          </article>
+        `;
+      }).join(``);
+    }
+
+    function renderRiskMatrix() {
+      const grid = document.getElementById(`risk-matrix`);
+      const chip = document.getElementById(`matrix-position-chip`);
+      if (!grid) return;
+
+      const st = getActiveMesaState();
+      // Derive Impact (1-3) and Probability (1-3) from current risk score
+      let row = 1; // 0=Alto, 1=Médio, 2=Baixo (top to bottom)
+      let col = 1; // 0=Baixa, 1=Média, 2=Alta (left to right)
+      if (st.risk >= 75) { row = 0; col = 2; }
+      else if (st.risk >= 60) { row = 0; col = 1; }
+      else if (st.risk >= 45) { row = 1; col = 1; }
+      else if (st.risk >= 30) { row = 1; col = 0; }
+      else { row = 2; col = 0; }
+
+      const impactLabels = [`Impacto Alto`, `Impacto Médio`, `Impacto Baixo`];
+      const probLabels = [`Prob. Baixa`, `Prob. Média`, `Prob. Alta`];
+      if (chip) chip.textContent = `${impactLabels[row]} × ${probLabels[col]}`;
+
+      const zones = [
+        [`zone-med`, `zone-high`, `zone-high`],
+        [`zone-low`, `zone-med`, `zone-high`],
+        [`zone-low`, `zone-low`, `zone-med`]
+      ];
+      const cellNames = [
+        [`Médio`, `Alto`, `Crítico`],
+        [`Baixo`, `Médio`, `Alto`],
+        [`Residual`, `Baixo`, `Médio`]
+      ];
+
+      let html = ``;
+      for (let r = 0; r < 3; r++) {
+        html += `<div class="matrix-axis-label">${impactLabels[r].replace(`Impacto `, ``)}</div>`;
+        for (let c = 0; c < 3; c++) {
+          const isCurrent = r === row && c === col;
+          html += `
+            <div class="matrix-cell ${zones[r][c]} ${isCurrent ? `is-current` : ``}">
+              <span>${cellNames[r][c]}</span>
+              ${isCurrent ? `<span style="font-size: 0.68rem;">${appState.activeMesa} (${st.risk}%)</span>` : ``}
+            </div>
+          `;
+        }
+      }
+      html += `<div></div>`;
+      probLabels.forEach(function(p) {
+        html += `<div class="matrix-axis-label">${p}</div>`;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    /* ==========================================================
+       BOOTSTRAP
+       ========================================================== */
+    async function initApp() {
+      const saved = await loadPersistedState();
+      if (saved) {
+        hydrateState(saved);
+      }
+      renderAll();
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === `function`) {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    document.addEventListener(`DOMContentLoaded`, initApp);
+  </script>
+</body>
+</html>
