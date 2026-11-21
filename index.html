@@ -2723,6 +2723,50 @@
     }
 
     document.addEventListener(`DOMContentLoaded`, initApp);
+    // 1. Função para capturar o parâmetro 'setor' da URL
+    function capturarSetorURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const setor = urlParams.get('setor'); // Captura o valor após ?setor=
+      return setor ? setor.toLowerCase().trim() : null;
+    }
+    
+    // 2. Executa a seleção automática assim que a página carrega
+    document.addEventListener('DOMContentLoaded', () => {
+      const setorParam = capturarSetorURL();
+    
+      if (setorParam) {
+        const seletorSetor = document.getElementById('setorSelect'); // Garanta que o seu <select> tem id="setorSelect"
+        
+        // Mapeamento dos parâmetros curtos para as opções do seletor
+        const mapaSetores = {
+          'banking': 'banking',
+          'mc1': 'banking',
+          'saude': 'saude',
+          'mc2': 'saude',
+          'logistica': 'logistica',
+          'mc3': 'logistica',
+          'educacao': 'educacao',
+          'mc4': 'educacao',
+          'energia': 'energia',
+          'mc5': 'energia'
+        };
+    
+        const setorMapeado = mapaSetores[setorParam];
+    
+        if (seletorSetor && setorMapeado) {
+          // Define o valor selecionado no dropdown
+          seletorSetor.value = setorMapeado;
+    
+          // Dispara a função de atualização do cenário da sua aplicação
+          if (typeof atualizarCenario === 'function') {
+            atualizarCenario(setorMapeado);
+          }
+          
+          // Opcional: Se quiser congelar o seletor para o aluno não mudar de setor no Miro
+          // seletorSetor.disabled = true;
+        }
+      }
+    });
   </script>
 </body>
 </html>
